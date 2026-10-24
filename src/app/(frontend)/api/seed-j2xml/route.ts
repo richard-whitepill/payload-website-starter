@@ -73,11 +73,15 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
 
-    // JSON file helye: src/seed/j2xml_parsed.json vagy src/app/api/seed-j2xml/j2xml_parsed.json
     const possiblePaths = [
       path.join(process.cwd(), 'src/seed/j2xml_parsed.json'),
+      path.join(process.cwd(), 'src/app/(frontend)/api/seed-j2xml/j2xml_parsed.json'),
       path.join(process.cwd(), 'src/app/api/seed-j2xml/j2xml_parsed.json'),
+      path.join(process.cwd(), 'src/app/(frontend)/seed/j2xml_parsed.json'),
       path.join(process.cwd(), 'j2xml_parsed.json'),
+      '/var/task/src/seed/j2xml_parsed.json',
+      '/var/task/src/app/(frontend)/api/seed-j2xml/j2xml_parsed.json',
+      '/var/task/src/app/api/seed-j2xml/j2xml_parsed.json',
     ]
 
     let jsonPath = ''
@@ -89,10 +93,28 @@ export async function GET() {
     }
 
     if (!jsonPath) {
+      // List files to debug
+      let debugInfo = ''
+      try {
+        const srcDir = path.join(process.cwd(), 'src')
+        const seedDir = path.join(srcDir, 'seed')
+        if (fs.existsSync(seedDir)) {
+          debugInfo += `src/seed exists: ${fs.readdirSync(seedDir).join(', ')}\n`
+        } else {
+          debugInfo += `src/seed NOT exists\n`
+        }
+        const frontendSeed = path.join(process.cwd(), 'src/app/(frontend)/api/seed-j2xml')
+        if (fs.existsSync(frontendSeed)) {
+          debugInfo += `frontend api exists: ${fs.readdirSync(frontendSeed).join(', ')}\n`
+        }
+      } catch (e) {}
+
       return NextResponse.json({ 
         success: false, 
         error: 'j2xml_parsed.json nem található! Tedd a src/seed/ mappába vagy mellé a route.ts mellé',
-        tried: possiblePaths
+        tried: possiblePaths,
+        debug: debugInfo,
+        cwd: process.cwd(),
       }, { status: 404 })
     }
 
@@ -103,7 +125,6 @@ export async function GET() {
     let skipped = 0
     let errors = 0
 
-    // Kategóriák
     const categoriesMap: Record<string, any> = {}
     const uniqueCats = [...new Set(j2xmlData.map((a: any) => a.catid))].filter(Boolean) as string[]
 
@@ -131,7 +152,6 @@ export async function GET() {
       }
     }
 
-    // Cikkek
     for (const article of j2xmlData) {
       try {
         const slug = article.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 90) || `cikk-${article.id}`
@@ -183,10 +203,10 @@ export async function GET() {
       errors,
       total: j2xmlData.length,
       categories: Object.keys(categoriesMap),
+      usedPath: jsonPath,
     })
   } catch (err: any) {
     console.error(err)
     return NextResponse.json({ success: false, error: err.message, stack: err.stack }, { status: 500 })
   }
 }
-
