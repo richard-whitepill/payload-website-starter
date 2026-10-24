@@ -8,46 +8,9 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
 
-    // Ensure public/media exists for Payload
-    const mediaDirs = [
-      path.join(process.cwd(), 'public/media'),
-      path.join(process.cwd(), 'public'),
-      '/var/task/public/media',
-      '/var/task/public',
-    ]
-    for (const dir of mediaDirs) {
-      try {
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true })
-        }
-      } catch {}
-    }
-
     // Find zip
-    const possibleZips = [
-      path.join(process.cwd(), 'src/seed/images.zip'),
-      path.join(process.cwd(), 'src/seed/Images.zip'),
-    ]
-    
-    let zipPath = ''
-    for (const p of possibleZips) {
-      if (fs.existsSync(p)) { zipPath = p; break }
-    }
-    
-    if (!zipPath) {
-      const seedDir = path.join(process.cwd(), 'src/seed')
-      if (fs.existsSync(seedDir)) {
-        const files = fs.readdirSync(seedDir)
-        for (const f of files) {
-          if (f.toLowerCase().includes('images') && f.toLowerCase().endsWith('.zip')) {
-            zipPath = path.join(seedDir, f)
-            break
-          }
-        }
-      }
-    }
-
-    if (!zipPath) {
+    const zipPath = path.join(process.cwd(), 'src/seed/images.zip')
+    if (!fs.existsSync(zipPath)) {
       const seedDir = path.join(process.cwd(), 'src/seed')
       return NextResponse.json({
         success: false,
@@ -75,7 +38,14 @@ export async function GET() {
       return name.match(/\.(jpg|jpeg|png|gif|webp|pdf|svg)$/)
     })
 
-    const batch = imageEntries.slice(0, 50)
+    const batch = imageEntries.slice(0, 40)
+
+    // Try to use @vercel/blob directly if available
+    let put: any = null
+    try {
+      const blobMod = await import('@vercel/blob')
+      put = blobMod.put
+    } catch {}
 
     for (const entry of batch) {
       try {
@@ -101,20 +71,55 @@ export async function GET() {
         else if (ext === '.pdf') mimetype = 'application/pdf'
         else if (ext === '.svg') mimetype = 'image/svg+xml'
 
-        await payload.create({
-          collection: 'media',
-          data: { alt: fileName },
-          file: {
-            data: buffer,
-            mimetype,
-            name: fileName,
-            size: buffer.length,
-          } as any,
-        })
+        // Upload to Vercel Blob if possible, otherwise use Payload media
+        let fileUrl = ''
+        
+        if (put) {
+          try {
+            const blob = await put(`media/${fileName}`, buffer, { 
+              access: 'public',
+              contentType: mimetype,
+            })
+            fileUrl = blob.url
+          } catch (e: any) {
+            // fallback to payload create
+            errorList.push(`Blob put failed for ${fileName}: ${e.message}, trying payload create`)
+          }
+        }
+
+        if (fileUrl) {
+          // Create media doc with blob URL
+          await payload.create({
+            collection: 'media',
+            data: {
+              alt: fileName,
+              url: fileUrl,
+              filename: fileName,
+            } as any,
+          })
+        } else {
+          // Fallback: try payload create with /tmp file
+          const tmpPath = path.join('/tmp', fileName)
+          fs.writeFileSync(tmpPath, buffer)
+          
+          await payload.create({
+            collection: 'media',
+            data: { alt: fileName },
+            file: {
+              data: buffer,
+              mimetype,
+              name: fileName,
+              size: buffer.length,
+            } as any,
+          })
+          
+          try { fs.unlinkSync(tmpPath) } catch {}
+        }
+        
         uploaded++
       } catch (e: any) {
         errors++
-        errorList.push(`${(entry.entryName as string)}: ${e.message}`.substring(0, 300))
+        errorList.push(`${(entry.entryName as string)}: ${e.message}`.substring(0, 400))
       }
     }
 
@@ -129,7 +134,7 @@ export async function GET() {
       skipped,
       errors,
       remaining: imageEntries.length - batch.length,
-      errorsList: errorList.slice(0, 5),
+      errorsList: errorList.slice(0, 8),
       nextStep: imageEntries.length > batch.length ? `Futtasd újra! Még ${imageEntries.length - batch.length} kép hátra!` : 'Kész! Minden kép feltöltve!',
     })
   } catch (err: any) {
