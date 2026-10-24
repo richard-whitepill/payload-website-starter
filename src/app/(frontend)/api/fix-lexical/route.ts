@@ -8,7 +8,7 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }
 
-function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: string }>): any {
+function htmlToLexicalWithMediaBlocks(html: string, mediaMap: Map<string, { id: string | number, url: string }>): any {
   const rootChildren: any[] = []
   let cleanHtml = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
   const parts = cleanHtml.split(/(<img[^>]+>)/gi)
@@ -45,6 +45,9 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
                 format: 0,
                 version: 1,
               }],
+              direction: null,
+              textStyle: '',
+              textFormat: 0,
             })
           }
         }
@@ -68,14 +71,17 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
           }
         }
         if (mediaInfo) {
+          // CORRECT Media Block format from Test Image debug
           rootChildren.push({
-            type: 'upload',
-            version: 3,
+            type: 'block',
+            fields: {
+              id: generateId(),
+              media: mediaInfo.id,
+              blockName: '',
+              blockType: 'mediaBlock',
+            },
             format: '',
-            id: generateId(),
-            fields: null,
-            relationTo: 'media',
-            value: mediaInfo.id,
+            version: 2,
           })
         }
       }
@@ -91,6 +97,9 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
       indent: 0,
       version: 1,
       children: [{ mode: 'normal', text: '', type: 'text', style: '', detail: 0, format: 0, version: 1 }],
+      direction: null,
+      textStyle: '',
+      textFormat: 0,
     })
   }
   return {
@@ -100,6 +109,7 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
       indent: 0,
       version: 1,
       children: rootChildren,
+      direction: null,
     },
   }
 }
@@ -116,7 +126,7 @@ export async function GET() {
     const articles = Array.isArray(data) ? data : data.articles || data.items || []
     
     const allMedia = await payload.find({ collection: 'media', limit: 1000 })
-    const mediaMap = new Map<string, { id: string, url: string }>()
+    const mediaMap = new Map<string, { id: string | number, url: string }>()
     for (const m of allMedia.docs as any[]) {
       const filename = m.filename || path.basename(m.url || '')
       if (filename) {
@@ -130,11 +140,6 @@ export async function GET() {
     let imagesFound = 0
     const details: string[] = []
     
-    // Process all articles, but 50 per run
-    const startIdx = 0
-    const batchSize = 50
-    
-    // Get all posts to find which ones need fixing (those with Lexical error or without images)
     const allPosts = await payload.find({ collection: 'posts', limit: 500 })
     const postMap = new Map<string, any>()
     for (const p of allPosts.docs as any[]) {
@@ -146,36 +151,27 @@ export async function GET() {
       if (!title) continue
       
       const post = postMap.get(title)
-      if (!post) {
-        skipped++
-        continue
-      }
+      if (!post) { skipped++; continue }
       
       const introtext = String(article.introtext || article.intro || '')
       const fulltext = String(article.fulltext || article.full || '')
       const combinedHtml = `${introtext}\n${fulltext}`.trim()
       
-      if (!combinedHtml) {
-        skipped++
-        continue
-      }
+      if (!combinedHtml) { skipped++; continue }
       
-      // Only update if post content is broken or has no images but should have
       const imgMatches = combinedHtml.match(/<img[^>]+>/gi) || []
+      if (imgMatches.length === 0) { skipped++; continue }
       
-      // Check if current post content already has correct upload nodes (version 3)
-      const currentContentStr = JSON.stringify(post.content || '')
-      const hasCorrectUpload = currentContentStr.includes('"version":3') && currentContentStr.includes('"type":"upload"')
-      const hasWrongUpload = currentContentStr.includes('"version":2') && currentContentStr.includes('"type":"upload"')
+      // Check if already has correct mediaBlock
+      const contentStr = JSON.stringify(post.content || '')
+      const hasMediaBlock = contentStr.includes('"blockType":"mediaBlock"') || contentStr.includes('"blockType": "mediaBlock"')
+      const hasWrongUpload = contentStr.includes('"type":"upload"')
       
-      // If already correct, skip
-      if (hasCorrectUpload && !hasWrongUpload) {
-        skipped++
-        continue
-      }
+      // If has wrong upload, we need to fix it
+      // If has mediaBlock already, skip
+      if (hasMediaBlock && !hasWrongUpload) { skipped++; continue }
       
-      // If no images in original, but we still want to ensure content is Lexical
-      const lexicalContent = htmlToLexical(combinedHtml, mediaMap)
+      const lexicalContent = htmlToLexicalWithMediaBlocks(combinedHtml, mediaMap)
       
       try {
         await payload.update({
@@ -185,17 +181,15 @@ export async function GET() {
         })
         updated++
         imagesFound += imgMatches.length
-        if (details.length < 10) {
-          details.push(`${String(title).substring(0, 50)}: ${imgMatches.length} kép`)
+        if (details.length < 15) {
+          details.push(`${String(title).substring(0, 50)}: ${imgMatches.length} kép -> MediaBlock`)
         }
       } catch (e: any) {
         details.push(`Hiba ${String(title).substring(0,30)}: ${e.message.substring(0,200)}`)
       }
       
-      if (updated >= batchSize) break
+      if (updated >= 50) break
     }
-    
-    const remainingPosts = allPosts.totalDocs - (updated + skipped)
     
     return NextResponse.json({
       success: true,
@@ -206,8 +200,7 @@ export async function GET() {
       skipped,
       imagesFound,
       details,
-      remainingApprox: remainingPosts > 0 ? `${remainingPosts} cikk még hátra lehet` : 'Kész!',
-      nextStep: updated > 0 ? `Frissítve ${updated} cikk JÓ formátummal (version 3)! Futtasd újra, amíg 0 updated nem lesz! Utána nézd meg: "A kocsányos tölgy..." - már nem lesz error #17!` : 'Minden cikk már jó formátumban van (version 3)!',
+      nextStep: updated > 0 ? `Frissítve ${updated} cikk MediaBlock formátummal! Futtasd újra, amíg 0 updated! Utána nézd: "A kocsányos tölgy..." - már nem lesz error #17, hanem kép!` : 'Minden cikk már MediaBlock formátumban!',
     })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message, stack: err.stack?.substring(0, 3000) }, { status: 500 })
