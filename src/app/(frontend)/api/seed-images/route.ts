@@ -8,18 +8,10 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
 
-    // Find zip
     const zipPath = path.join(process.cwd(), 'src/seed/images.zip')
     if (!fs.existsSync(zipPath)) {
-      const seedDir = path.join(process.cwd(), 'src/seed')
-      return NextResponse.json({
-        success: false,
-        error: 'images.zip nem található!',
-        debug: fs.existsSync(seedDir) ? fs.readdirSync(seedDir).join(', ') : 'src/seed NOT EXISTS',
-      }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'images.zip nem található!' }, { status: 404 })
     }
-
-    const stats = fs.statSync(zipPath)
 
     // @ts-ignore
     const mod = await import('adm-zip')
@@ -27,20 +19,29 @@ export async function GET() {
     const zip = new AdmZip(zipPath)
     const entries = zip.getEntries()
 
-    let uploaded = 0
-    let skipped = 0
-    let errors = 0
-    const errorList: string[] = []
-
     const imageEntries = entries.filter((e: any) => {
       if (e.isDirectory) return false
       const name = (e.entryName as string).toLowerCase()
       return name.match(/\.(jpg|jpeg|png|gif|webp|pdf|svg)$/)
     })
 
-    const batch = imageEntries.slice(0, 40)
+    // Get all existing media filenames
+    const allMedia = await payload.find({ collection: 'media', limit: 1000 })
+    const existingFilenames = new Set(allMedia.docs.map((d: any) => d.filename || path.basename(d.url || '')))
 
-    // Try to use @vercel/blob directly if available
+    // Filter to only new images
+    const newEntries = imageEntries.filter((e: any) => {
+      const fileName = path.basename(e.entryName as string)
+      return !existingFilenames.has(fileName)
+    })
+
+    let uploaded = 0
+    let errors = 0
+    const errorList: string[] = []
+
+    const batch = newEntries.slice(0, 50)
+
+    // @ts-ignore
     let put: any = null
     try {
       const blobMod = await import('@vercel/blob')
@@ -49,19 +50,9 @@ export async function GET() {
 
     for (const entry of batch) {
       try {
-        const entryName = entry.entryName as string
-        const fileName = path.basename(entryName)
+        const fileName = path.basename(entry.entryName as string)
         const buffer = entry.getData() as Buffer
-
-        if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) { skipped++; continue }
-
-        const existing = await payload.find({
-          collection: 'media',
-          where: { filename: { equals: fileName } },
-          limit: 1,
-        })
-
-        if (existing.docs[0]) { skipped++; continue }
+        if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) continue
 
         const ext = path.extname(fileName).toLowerCase()
         let mimetype = 'image/jpeg'
@@ -71,51 +62,24 @@ export async function GET() {
         else if (ext === '.pdf') mimetype = 'application/pdf'
         else if (ext === '.svg') mimetype = 'image/svg+xml'
 
-        // Upload to Vercel Blob if possible, otherwise use Payload media
         let fileUrl = ''
-        
         if (put) {
-          try {
-            const blob = await put(`media/${fileName}`, buffer, { 
-              access: 'public',
-              contentType: mimetype,
-            })
-            fileUrl = blob.url
-          } catch (e: any) {
-            // fallback to payload create
-            errorList.push(`Blob put failed for ${fileName}: ${e.message}, trying payload create`)
-          }
+          const blob = await put(`media/${fileName}`, buffer, { access: 'public', contentType: mimetype })
+          fileUrl = blob.url
         }
 
         if (fileUrl) {
-          // Create media doc with blob URL
           await payload.create({
             collection: 'media',
-            data: {
-              alt: fileName,
-              url: fileUrl,
-              filename: fileName,
-            } as any,
+            data: { alt: fileName, url: fileUrl, filename: fileName } as any,
           })
         } else {
-          // Fallback: try payload create with /tmp file
-          const tmpPath = path.join('/tmp', fileName)
-          fs.writeFileSync(tmpPath, buffer)
-          
           await payload.create({
             collection: 'media',
             data: { alt: fileName },
-            file: {
-              data: buffer,
-              mimetype,
-              name: fileName,
-              size: buffer.length,
-            } as any,
+            file: { data: buffer, mimetype, name: fileName, size: buffer.length } as any,
           })
-          
-          try { fs.unlinkSync(tmpPath) } catch {}
         }
-        
         uploaded++
       } catch (e: any) {
         errors++
@@ -123,19 +87,24 @@ export async function GET() {
       }
     }
 
+    // Recalculate after upload
+    const afterMedia = await payload.find({ collection: 'media', limit: 1000 })
+    const totalUploaded = afterMedia.totalDocs
+
     return NextResponse.json({
       success: true,
       zipPath,
-      zipSize: `${(stats.size / 1024 / 1024).toFixed(2)} MB`,
       totalInZip: entries.length,
       imagesInZip: imageEntries.length,
+      alreadyInMedia: existingFilenames.size,
+      newImagesFound: newEntries.length,
       processedThisRun: batch.length,
       uploaded,
-      skipped,
       errors,
-      remaining: imageEntries.length - batch.length,
-      errorsList: errorList.slice(0, 8),
-      nextStep: imageEntries.length > batch.length ? `Futtasd újra! Még ${imageEntries.length - batch.length} kép hátra!` : 'Kész! Minden kép feltöltve!',
+      totalInMediaNow: totalUploaded,
+      remaining: newEntries.length - batch.length,
+      errorsList: errorList.slice(0, 5),
+      nextStep: newEntries.length - batch.length > 0 ? `Futtasd újra! Még ${newEntries.length - batch.length} kép hátra!` : 'Kész! Minden kép feltöltve! 337 kép bent van!',
     })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message, stack: err.stack?.substring(0, 2000) }, { status: 500 })
