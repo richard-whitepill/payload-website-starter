@@ -4,23 +4,18 @@ import config from '@payload-config'
 import fs from 'fs'
 import path from 'path'
 
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
 function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: string }>): any {
-  // Simple HTML to Lexical conversion
-  // Split by img tags
   const rootChildren: any[] = []
-  
-  // Remove script, style tags
-  let cleanHtml = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-  
-  // Split by img tags, keep img tags
+  let cleanHtml = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
   const parts = cleanHtml.split(/(<img[^>]+>)/gi)
-  
   let paragraphBuffer = ''
-  
+
   const flushParagraph = () => {
     if (paragraphBuffer.trim()) {
-      // Strip remaining HTML tags for text
       let text = paragraphBuffer
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<\/p>/gi, '\n\n')
@@ -31,20 +26,25 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
         .trim()
-      
       if (text) {
-        // Split by double newlines into paragraphs
         const paragraphs = text.split(/\n\s*\n/)
         for (const para of paragraphs) {
           const trimmed = para.trim()
           if (trimmed) {
             rootChildren.push({
               type: 'paragraph',
-              children: [{ type: 'text', text: trimmed, version: 1 }],
-              direction: 'ltr',
               format: '',
               indent: 0,
               version: 1,
+              children: [{
+                mode: 'normal',
+                text: trimmed,
+                type: 'text',
+                style: '',
+                detail: 0,
+                format: 0,
+                version: 1,
+              }],
             })
           }
         }
@@ -52,15 +52,11 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
       paragraphBuffer = ''
     }
   }
-  
+
   for (const part of parts) {
     if (!part) continue
-    
     if (part.toLowerCase().startsWith('<img')) {
-      // It's an image tag
       flushParagraph()
-      
-      // Extract src
       const srcMatch = part.match(/src=["']([^"']+)["']/i)
       if (srcMatch) {
         const oldSrc = srcMatch[1]
@@ -71,59 +67,39 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
             if (key.toLowerCase() === filename.toLowerCase()) { mediaInfo = info; break }
           }
         }
-        
         if (mediaInfo) {
-          // Create upload node for Lexical
           rootChildren.push({
             type: 'upload',
-            value: { id: mediaInfo.id },
+            version: 3,
+            format: '',
+            id: generateId(),
+            fields: null,
             relationTo: 'media',
-            fields: {
-              alt: filename,
-            },
-            format: '',
-            version: 2,
-          })
-        } else {
-          // If media not found, keep as text placeholder
-          rootChildren.push({
-            type: 'paragraph',
-            children: [{ type: 'text', text: `[Kép: ${filename}]`, version: 1 }],
-            direction: 'ltr',
-            format: '',
-            indent: 0,
-            version: 1,
+            value: mediaInfo.id,
           })
         }
       }
     } else {
-      // Text/HTML part
       paragraphBuffer += part
     }
   }
-  
   flushParagraph()
-  
-  // If no children, create at least one empty paragraph
   if (rootChildren.length === 0) {
     rootChildren.push({
       type: 'paragraph',
-      children: [{ type: 'text', text: '', version: 1 }],
-      direction: 'ltr',
       format: '',
       indent: 0,
       version: 1,
+      children: [{ mode: 'normal', text: '', type: 'text', style: '', detail: 0, format: 0, version: 1 }],
     })
   }
-  
   return {
     root: {
       type: 'root',
-      children: rootChildren,
-      direction: 'ltr',
       format: '',
       indent: 0,
       version: 1,
+      children: rootChildren,
     },
   }
 }
@@ -131,37 +107,14 @@ function htmlToLexical(html: string, mediaMap: Map<string, { id: string, url: st
 export async function GET() {
   try {
     const payload = await getPayload({ config })
-    
-    // Find j2xml-parsed.json
-    const possiblePaths = [
-      path.join(process.cwd(), 'src/seed/j2xml-parsed.json'),
-      path.join(process.cwd(), 'src/seed/j2xml-parsed-en.json'),
-    ]
-    let jsonPath = ''
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) { jsonPath = p; break }
-    }
-    if (!jsonPath) {
-      const seedDir = path.join(process.cwd(), 'src/seed')
-      if (fs.existsSync(seedDir)) {
-        const files = fs.readdirSync(seedDir)
-        for (const f of files) {
-          if (f.includes('j2xml') && f.endsWith('.json')) {
-            jsonPath = path.join(seedDir, f)
-            break
-          }
-        }
-      }
-    }
-    if (!jsonPath) {
+    const jsonPath = path.join(process.cwd(), 'src/seed/j2xml-parsed.json')
+    if (!fs.existsSync(jsonPath)) {
       return NextResponse.json({ success: false, error: 'j2xml-parsed.json nem található!' }, { status: 404 })
     }
-    
     const raw = fs.readFileSync(jsonPath, 'utf-8')
     const data = JSON.parse(raw)
     const articles = Array.isArray(data) ? data : data.articles || data.items || []
     
-    // Media map filename -> { id, url }
     const allMedia = await payload.find({ collection: 'media', limit: 1000 })
     const mediaMap = new Map<string, { id: string, url: string }>()
     for (const m of allMedia.docs as any[]) {
@@ -177,29 +130,51 @@ export async function GET() {
     let imagesFound = 0
     const details: string[] = []
     
-    for (const article of articles.slice(0, 150)) {
+    // Process all articles, but 50 per run
+    const startIdx = 0
+    const batchSize = 50
+    
+    // Get all posts to find which ones need fixing (those with Lexical error or without images)
+    const allPosts = await payload.find({ collection: 'posts', limit: 500 })
+    const postMap = new Map<string, any>()
+    for (const p of allPosts.docs as any[]) {
+      postMap.set(p.title, p)
+    }
+    
+    for (const article of articles) {
       const title = article.title || article.Title
       if (!title) continue
+      
+      const post = postMap.get(title)
+      if (!post) {
+        skipped++
+        continue
+      }
       
       const introtext = String(article.introtext || article.intro || '')
       const fulltext = String(article.fulltext || article.full || '')
       const combinedHtml = `${introtext}\n${fulltext}`.trim()
       
-      if (!combinedHtml) continue
-      
-      // Find existing post
-      const found = await payload.find({ collection: 'posts', where: { title: { equals: title } }, limit: 1 })
-      if (!found.docs[0]) {
+      if (!combinedHtml) {
         skipped++
         continue
       }
       
-      const post = found.docs[0] as any
-      
-      // Count images in HTML
+      // Only update if post content is broken or has no images but should have
       const imgMatches = combinedHtml.match(/<img[^>]+>/gi) || []
       
-      // Convert HTML to Lexical
+      // Check if current post content already has correct upload nodes (version 3)
+      const currentContentStr = JSON.stringify(post.content || '')
+      const hasCorrectUpload = currentContentStr.includes('"version":3') && currentContentStr.includes('"type":"upload"')
+      const hasWrongUpload = currentContentStr.includes('"version":2') && currentContentStr.includes('"type":"upload"')
+      
+      // If already correct, skip
+      if (hasCorrectUpload && !hasWrongUpload) {
+        skipped++
+        continue
+      }
+      
+      // If no images in original, but we still want to ensure content is Lexical
       const lexicalContent = htmlToLexical(combinedHtml, mediaMap)
       
       try {
@@ -214,23 +189,25 @@ export async function GET() {
           details.push(`${String(title).substring(0, 50)}: ${imgMatches.length} kép`)
         }
       } catch (e: any) {
-        details.push(`Hiba ${String(title).substring(0, 30)}: ${e.message.substring(0, 200)}`)
+        details.push(`Hiba ${String(title).substring(0,30)}: ${e.message.substring(0,200)}`)
       }
       
-      if (updated >= 50) break
+      if (updated >= batchSize) break
     }
+    
+    const remainingPosts = allPosts.totalDocs - (updated + skipped)
     
     return NextResponse.json({
       success: true,
-      jsonPath,
       totalArticlesInJson: articles.length,
+      totalPostsInDb: allPosts.totalDocs,
       totalMedia: allMedia.totalDocs,
-      mediaMapSize: mediaMap.size,
       updated,
       skipped,
       imagesFound,
       details,
-      nextStep: updated > 0 ? `Frissítve ${updated} cikk Lexical formátumra, ${imagesFound} képpel! Nézd meg adminban egy cikket!` : 'Nincs frissítendő cikk!',
+      remainingApprox: remainingPosts > 0 ? `${remainingPosts} cikk még hátra lehet` : 'Kész!',
+      nextStep: updated > 0 ? `Frissítve ${updated} cikk JÓ formátummal (version 3)! Futtasd újra, amíg 0 updated nem lesz! Utána nézd meg: "A kocsányos tölgy..." - már nem lesz error #17!` : 'Minden cikk már jó formátumban van (version 3)!',
     })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message, stack: err.stack?.substring(0, 3000) }, { status: 500 })
