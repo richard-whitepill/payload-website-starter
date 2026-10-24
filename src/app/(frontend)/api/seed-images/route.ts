@@ -8,11 +8,25 @@ export async function GET() {
   try {
     const payload = await getPayload({ config })
 
+    // Ensure public/media exists for Payload
+    const mediaDirs = [
+      path.join(process.cwd(), 'public/media'),
+      path.join(process.cwd(), 'public'),
+      '/var/task/public/media',
+      '/var/task/public',
+    ]
+    for (const dir of mediaDirs) {
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true })
+        }
+      } catch {}
+    }
+
     // Find zip
     const possibleZips = [
       path.join(process.cwd(), 'src/seed/images.zip'),
       path.join(process.cwd(), 'src/seed/Images.zip'),
-      path.join(process.cwd(), 'src/seed/images.Zip'),
     ]
     
     let zipPath = ''
@@ -39,27 +53,14 @@ export async function GET() {
         success: false,
         error: 'images.zip nem található!',
         debug: fs.existsSync(seedDir) ? fs.readdirSync(seedDir).join(', ') : 'src/seed NOT EXISTS',
-        cwd: process.cwd(),
       }, { status: 404 })
     }
 
     const stats = fs.statSync(zipPath)
 
-    // Dynamic import adm-zip with ts-ignore
-    let AdmZip: any
-    try {
-      // @ts-ignore
-      const mod = await import('adm-zip')
-      AdmZip = (mod as any).default || mod
-    } catch (e: any) {
-      return NextResponse.json({
-        success: false,
-        error: `adm-zip betöltése sikertelen: ${e.message}`,
-        zipPath,
-        size: stats.size,
-      }, { status: 500 })
-    }
-
+    // @ts-ignore
+    const mod = await import('adm-zip')
+    const AdmZip = (mod as any).default || mod
     const zip = new AdmZip(zipPath)
     const entries = zip.getEntries()
 
@@ -74,7 +75,7 @@ export async function GET() {
       return name.match(/\.(jpg|jpeg|png|gif|webp|pdf|svg)$/)
     })
 
-    const batch = imageEntries.slice(0, 60)
+    const batch = imageEntries.slice(0, 50)
 
     for (const entry of batch) {
       try {
@@ -113,7 +114,7 @@ export async function GET() {
         uploaded++
       } catch (e: any) {
         errors++
-        errorList.push(`${(entry.entryName as string)}: ${e.message}`.substring(0, 200))
+        errorList.push(`${(entry.entryName as string)}: ${e.message}`.substring(0, 300))
       }
     }
 
@@ -132,6 +133,6 @@ export async function GET() {
       nextStep: imageEntries.length > batch.length ? `Futtasd újra! Még ${imageEntries.length - batch.length} kép hátra!` : 'Kész! Minden kép feltöltve!',
     })
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message, stack: err.stack?.substring(0, 1000) }, { status: 500 })
+    return NextResponse.json({ success: false, error: err.message, stack: err.stack?.substring(0, 2000) }, { status: 500 })
   }
 }
