@@ -1,46 +1,39 @@
-'use client'
-import { useHeaderTheme } from '@/providers/HeaderTheme'
-import React, { useEffect } from 'react'
+import React from 'react'
 
-import type { Page } from '@/payload-types'
-
-import { CMSLink } from '@/components/Link'
-import { Media } from '@/components/Media'
-import RichText from '@/components/RichText'
-
-export const HighImpactHero: React.FC<Page['hero']> = ({ links, media, richText }) => {
-  const { setHeaderTheme } = useHeaderTheme()
-
-  useEffect(() => {
-    setHeaderTheme('dark')
-  })
+export const PostHero: React.FC<{ post: any }> = ({ post }) => {
+  const title = post?.title || ''
+  const publishedAt = post?.publishedAt
+  const dateStr = publishedAt
+    ? new Date(publishedAt).toLocaleDateString('hu-HU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : ''
+  const heroImage = post?.heroImage || post?.meta?.image
+  let imageUrl = null
+  if (heroImage && typeof heroImage === 'object') {
+    imageUrl = heroImage.url
+  }
 
   return (
-    <div
-      className="relative -mt-[10.4rem] flex items-center justify-center text-white"
-      data-theme="dark"
-    >
-      <div className="container mb-8 z-10 relative flex items-center justify-center">
-        <div className="max-w-[36.5rem] md:text-center">
-          {richText && <RichText className="mb-6" data={richText} enableGutter={false} />}
-          {Array.isArray(links) && links.length > 0 && (
-            <ul className="flex md:justify-center gap-4">
-              {links.map(({ link }, i) => {
-                return (
-                  <li key={i}>
-                    <CMSLink {...link} />
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
-      <div className="min-h-[80vh] select-none">
-        {media && typeof media === 'object' && (
-          <Media fill imgClassName="-z-10 object-cover" priority resource={media} />
+    <div className="container pt-8 pb-2">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#2d5016] leading-tight mb-2">
+          {title}
+        </h1>
+        {dateStr && <div className="text-sm text-[#5d4037] mb-6 border-b border-[#d5cfb8] pb-4">{dateStr}</div>}
+        
+        {imageUrl && (
+          <div className="float-left mr-6 mb-4 w-64 md:w-80 border border-[#d5cfb8] p-1 bg-white shadow-sm">
+            <img src={imageUrl} alt={title} className="w-full h-auto" />
+          </div>
         )}
+        {/* Clearfix után a tartalom jön, de a kép úszik! */}
+        <div className="clearfix"></div>
       </div>
     </div>
   )
 }
+
+export default PostHero
