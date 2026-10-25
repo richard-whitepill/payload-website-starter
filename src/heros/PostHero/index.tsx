@@ -1,73 +1,39 @@
-import { formatDateTime } from 'src/utilities/formatDateTime'
 import React from 'react'
 
-import type { Post } from '@/payload-types'
-
-import { Media } from '@/components/Media'
-import { formatAuthors } from '@/utilities/formatAuthors'
-
-export const PostHero: React.FC<{
-  post: Post
-}> = ({ post }) => {
-  const { categories, heroImage, populatedAuthors, publishedAt, title } = post
-
-  const hasAuthors =
-    populatedAuthors && populatedAuthors.length > 0 && formatAuthors(populatedAuthors) !== ''
+export const PostHero: React.FC<{ post: any }> = ({ post }) => {
+  const title = post?.title || ''
+  const publishedAt = post?.publishedAt
+  const dateStr = publishedAt
+    ? new Date(publishedAt).toLocaleDateString('hu-HU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : ''
+  const heroImage = post?.heroImage || post?.meta?.image
+  let imageUrl = null
+  if (heroImage && typeof heroImage === 'object') {
+    imageUrl = heroImage.url
+  }
 
   return (
-    <div className="relative -mt-[10.4rem] flex items-end">
-      <div className="container z-10 relative lg:grid lg:grid-cols-[1fr_48rem_1fr] text-white pb-8">
-        <div className="col-start-1 col-span-1 md:col-start-2 md:col-span-2">
-          <div className="uppercase text-sm mb-6">
-            {categories?.map((category, index) => {
-              if (typeof category === 'object' && category !== null) {
-                const { title: categoryTitle } = category
-
-                const titleToUse = categoryTitle || 'Untitled category'
-
-                const isLast = index === categories.length - 1
-
-                return (
-                  <React.Fragment key={index}>
-                    {titleToUse}
-                    {!isLast && <React.Fragment>, &nbsp;</React.Fragment>}
-                  </React.Fragment>
-                )
-              }
-              return null
-            })}
+    <div className="container pt-8 pb-2">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="font-serif font-bold text-3xl md:text-4xl text-[#2d5016] leading-tight mb-2">
+          {title}
+        </h1>
+        {dateStr && <div className="text-sm text-[#5d4037] mb-6 border-b border-[#d5cfb8] pb-4">{dateStr}</div>}
+        
+        {imageUrl && (
+          <div className="float-left mr-6 mb-4 w-64 md:w-80 border border-[#d5cfb8] p-1 bg-white shadow-sm">
+            <img src={imageUrl} alt={title} className="w-full h-auto" />
           </div>
-
-          <div className="">
-            <h1 className="mb-6 text-3xl md:text-5xl lg:text-6xl">{title}</h1>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 md:gap-16">
-            {hasAuthors && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm">Author</p>
-
-                  <p>{formatAuthors(populatedAuthors)}</p>
-                </div>
-              </div>
-            )}
-            {publishedAt && (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm">Date Published</p>
-
-                <time dateTime={publishedAt}>{formatDateTime(publishedAt)}</time>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="min-h-[80vh] select-none">
-        {heroImage && typeof heroImage !== 'string' && (
-          <Media fill priority imgClassName="-z-10 object-cover" resource={heroImage} />
         )}
-        <div className="absolute pointer-events-none left-0 bottom-0 w-full h-1/2 bg-linear-to-t from-black to-transparent" />
+        {/* Clearfix után a tartalom jön, de a kép úszik! */}
+        <div className="clearfix"></div>
       </div>
     </div>
   )
 }
+
+export default PostHero
