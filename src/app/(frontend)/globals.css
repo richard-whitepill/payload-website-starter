@@ -87,80 +87,80 @@
 }
 
 :root {
-  --background: oklch(100% 0 0deg);
-  --foreground: oklch(14.5% 0 0deg);
-  --card: oklch(96.5% 0.005 265deg);
-  --card-foreground: oklch(14.5% 0 0deg);
-  --popover: oklch(100% 0 0deg);
-  --popover-foreground: oklch(14.5% 0 0deg);
-  --primary: oklch(20.5% 0 0deg);
-  --primary-foreground: oklch(98.5% 0 0deg);
-  --secondary: oklch(97% 0 0deg);
-  --secondary-foreground: oklch(20.5% 0 0deg);
-  --muted: oklch(97% 0 0deg);
-  --muted-foreground: oklch(55.6% 0 0deg);
-  --accent: oklch(97% 0 0deg);
-  --accent-foreground: oklch(20.5% 0 0deg);
+  --background: #f5f5dc; /* EFDSZ bézs - konzervatív */
+  --foreground: #2d2c2c;
+  --card: #fffef5;
+  --card-foreground: #2d2c2c;
+  --popover: #f5f5dc;
+  --popover-foreground: #2d2c2c;
+  --primary: #2d5016; /* EFDSZ zöld */
+  --primary-foreground: #f5f5dc;
+  --secondary: #e8e0c8;
+  --secondary-foreground: #5d4037;
+  --muted: #e8e0c8;
+  --muted-foreground: #5d4037;
+  --accent: #2d5016;
+  --accent-foreground: #f5f5dc;
   --destructive: oklch(57.7% 0.245 27.325deg);
   --destructive-foreground: oklch(57.7% 0.245 27.325deg);
-  --border: oklch(92.2% 0 0deg);
-  --input: oklch(92.2% 0 0deg);
-  --ring: oklch(70.8% 0 0deg);
+  --border: #d5cfb8;
+  --input: #d5cfb8;
+  --ring: #2d5016;
   --chart-1: oklch(64.6% 0.222 41.116deg);
   --chart-2: oklch(60% 0.118 184.704deg);
   --chart-3: oklch(39.8% 0.07 227.392deg);
   --chart-4: oklch(82.8% 0.189 84.429deg);
   --chart-5: oklch(76.9% 0.188 70.08deg);
   --radius: 0.625rem;
-  --sidebar: oklch(98.5% 0 0deg);
-  --sidebar-foreground: oklch(14.5% 0 0deg);
-  --sidebar-primary: oklch(20.5% 0 0deg);
-  --sidebar-primary-foreground: oklch(98.5% 0 0deg);
-  --sidebar-accent: oklch(97% 0 0deg);
-  --sidebar-accent-foreground: oklch(20.5% 0 0deg);
-  --sidebar-border: oklch(92.2% 0 0deg);
-  --sidebar-ring: oklch(70.8% 0 0deg);
+  --sidebar: #fffef5;
+  --sidebar-foreground: #2d2c2c;
+  --sidebar-primary: #2d5016;
+  --sidebar-primary-foreground: #f5f5dc;
+  --sidebar-accent: #e8e0c8;
+  --sidebar-accent-foreground: #5d4037;
+  --sidebar-border: #d5cfb8;
+  --sidebar-ring: #2d5016;
   --success: oklch(78% 0.08 200deg);
   --warning: oklch(89% 0.1 75deg);
   --error: oklch(75% 0.15 25deg);
 }
 
 [data-theme='dark'] {
-  --background: oklch(14.5% 0 0deg);
-  --foreground: oklch(98.5% 0 0deg);
-  --card: oklch(17% 0 0deg);
-  --card-foreground: oklch(98.5% 0 0deg);
-  --popover: oklch(14.5% 0 0deg);
-  --popover-foreground: oklch(98.5% 0 0deg);
-  --primary: oklch(98.5% 0 0deg);
-  --primary-foreground: oklch(20.5% 0 0deg);
-  --secondary: oklch(26.9% 0 0deg);
-  --secondary-foreground: oklch(98.5% 0 0deg);
-  --muted: oklch(26.9% 0 0deg);
-  --muted-foreground: oklch(70.8% 0 0deg);
-  --accent: oklch(26.9% 0 0deg);
-  --accent-foreground: oklch(98.5% 0 0deg);
+  --background: #f5f5dc; /* EFDSZ bézs - még sötét módban is! */
+  --foreground: #2d2c2c;
+  --card: #fffef5;
+  --card-foreground: #2d2c2c;
+  --popover: #f5f5dc;
+  --popover-foreground: #2d2c2c;
+  --primary: #2d5016;
+  --primary-foreground: #f5f5dc;
+  --secondary: #e8e0c8;
+  --secondary-foreground: #5d4037;
+  --muted: #e8e0c8;
+  --muted-foreground: #5d4037;
+  --accent: #2d5016;
+  --accent-foreground: #f5f5dc;
   --destructive: oklch(39.6% 0.141 25.723deg);
   --destructive-foreground: oklch(63.7% 0.237 25.331deg);
-  --border: oklch(26.9% 0 0deg);
-  --input: oklch(26.9% 0 0deg);
-  --ring: oklch(43.9% 0 0deg);
+  --border: #d5cfb8;
+  --input: #d5cfb8;
+  --ring: #2d5016;
   --chart-1: oklch(48.8% 0.243 264.376deg);
   --chart-2: oklch(69.6% 0.17 162.48deg);
   --chart-3: oklch(76.9% 0.188 70.08deg);
   --chart-4: oklch(62.7% 0.265 303.9deg);
   --chart-5: oklch(64.5% 0.246 16.439deg);
-  --sidebar: oklch(20.5% 0 0deg);
-  --sidebar-foreground: oklch(98.5% 0 0deg);
-  --sidebar-primary: oklch(48.8% 0.243 264.376deg);
-  --sidebar-primary-foreground: oklch(98.5% 0 0deg);
-  --sidebar-accent: oklch(26.9% 0 0deg);
-  --sidebar-accent-foreground: oklch(98.5% 0 0deg);
-  --sidebar-border: oklch(26.9% 0 0deg);
-  --sidebar-ring: oklch(43.9% 0 0deg);
-  --success: oklch(28% 0.1 200deg);
-  --warning: oklch(35% 0.08 70deg);
-  --error: oklch(45% 0.1 25deg);
+  --sidebar: #fffef5;
+  --sidebar-foreground: #2d2c2c;
+  --sidebar-primary: #2d5016;
+  --sidebar-primary-foreground: #f5f5dc;
+  --sidebar-accent: #e8e0c8;
+  --sidebar-accent-foreground: #5d4037;
+  --sidebar-border: #d5cfb8;
+  --sidebar-ring: #2d5016;
+  --success: #e8f5e9;
+  --warning: #fff8e1;
+  --error: #ffebee;
 }
 
 @theme inline {
@@ -211,6 +211,13 @@
   }
   body {
     @apply bg-background text-foreground min-h-[100vh] flex flex-col;
+    background-color: #f5f5dc !important;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  /* Konzervatív címek */
+  h1, h2, h3 {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #2d5016;
   }
 }
 
@@ -221,4 +228,10 @@ html {
 html[data-theme='dark'],
 html[data-theme='light'] {
   opacity: initial;
+}
+
+/* EFDSZ specifikus */
+.prose {
+  --tw-prose-body: #2d2c2c;
+  --tw-prose-headings: #2d5016;
 }
