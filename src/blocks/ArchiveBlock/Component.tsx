@@ -4,9 +4,10 @@ import { getPayload } from 'payload'
 import React from 'react'
 import RichText from '@/components/RichText'
 import { CollectionArchive } from '@/components/CollectionArchive'
+
 export const ArchiveBlock: React.FC<ArchiveBlockProps & { id?: string }> = async (props) => {
   const { id, categories, introContent, limit: limitFromProps, populateBy, selectedDocs } = props
-  const limit = limitFromProps || 3
+  const limit = limitFromProps || 10
   let posts: Post[] = []
   if (populateBy === 'collection') {
     const payload = await getPayload({ config: configPromise })
@@ -18,15 +19,17 @@ export const ArchiveBlock: React.FC<ArchiveBlockProps & { id?: string }> = async
       collection: 'posts',
       depth: 1,
       limit,
-      ...(flattenedCategories && flattenedCategories.length > 0 ? { where: { categories: { in: flattenedCategories } } } : {}),
+      sort: '-publishedAt',
+      ...(flattenedCategories && flattenedCategories.length > 0
+        ? { where: { categories: { in: flattenedCategories } } }
+        : {}),
     })
     posts = fetchedPosts.docs
   } else {
     if (selectedDocs?.length) {
-      const filteredSelectedPosts = selectedDocs.map((post) => {
+      posts = selectedDocs.map((post) => {
         if (typeof post.value === 'object') return post.value
       }) as Post[]
-      posts = filteredSelectedPosts
     }
   }
   return (
