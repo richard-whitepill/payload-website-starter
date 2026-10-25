@@ -9,36 +9,31 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
     <div className="container">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts?.map((post: any, i: number) => {
-          // ERŐS KÉPKERESÉS
-          let img: any = post.heroImage || post.meta?.image || null
           let imageUrl = null
-          let imageAlt = post.title
-          if (img) {
-            if (typeof img === 'object') {
-              imageUrl = img.url || img.sizes?.card?.url || img.sizes?.thumbnail?.url
-              imageAlt = img.alt || post.title
-            } else {
-              imageUrl = null // ID, nem objektum
-            }
+          const img = post.heroImage || post.meta?.image
+          if (img && typeof img === 'object') {
+            imageUrl = img.url || img.sizes?.card?.url || img.sizes?.medium?.url || null
           }
-          // Ha nincs hero, próbáld az első MediaBlock-ot? Most csak hero
           const title = post.title
           const slug = post.slug
           const excerpt = post.meta?.description || ''
           return (
-            <article key={i} className="border border-[#d5cfb8] rounded-lg bg-[#fffef5] p-6 shadow-sm">
-              {imageUrl ? (
-                <div className="mb-4 -m-6 mb-6 overflow-hidden rounded-t-lg">
-                  <img src={imageUrl} alt={imageAlt} className="w-full h-48 object-cover" />
+            <article key={i} className="border border-[#d5cfb8] rounded-lg bg-[#fffef5] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              {imageUrl && (
+                <div className="w-full h-48 overflow-hidden bg-[#e8e0c8]">
+                  <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
                 </div>
-              ) : (
-                <div className="mb-2 text-[10px] text-gray-400">Nincs hero kép: {slug} - heroImage típus: {typeof post.heroImage}</div>
               )}
-              <h3 className="font-serif font-bold text-lg text-[#2d5016] mb-3">
-                <Link href={`/posts/${slug}`}>{decodeHtml(title)}</Link>
-              </h3>
-              <p className="text-sm">{decodeHtml(excerpt).slice(0,180)}</p>
-              <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-medium hover:underline mt-4 block">Bővebben...</Link>
+              <div className="p-6">
+                <div className="text-xs uppercase text-[#5d4037] mb-2">HÍREK</div>
+                <h3 className="font-serif font-bold text-lg text-[#2d5016] mb-3 leading-tight">
+                  <Link href={`/posts/${slug}`} className="hover:underline">
+                    {decodeHtml(title)}
+                  </Link>
+                </h3>
+                <p className="text-sm text-[#2c2c2c] line-clamp-3">{decodeHtml(excerpt).slice(0,180)}</p>
+                <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-medium hover:underline mt-4 block">Bővebben...</Link>
+              </div>
             </article>
           )
         })}
