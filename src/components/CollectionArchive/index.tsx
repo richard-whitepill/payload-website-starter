@@ -24,10 +24,17 @@ function decodeHtml(str: string) {
 }
 
 export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
+  // Rendezés: legújabb elől!
+  const sorted = [...(posts || [])].sort((a: any, b: any) => {
+    const da = new Date(a.publishedAt || a.createdAt).getTime()
+    const db = new Date(b.publishedAt || b.createdAt).getTime()
+    return db - da
+  })
+
   return (
     <div className="container">
       <div className="max-w-4xl mx-auto divide-y divide-[#d5cfb8]">
-        {posts?.map((post: any, i: number) => {
+        {sorted?.map((post: any, i: number) => {
           const title = decodeHtml(post.title || '')
           const slug = post.slug
           const rawExcerpt = post.meta?.description || post.excerpt || ''
@@ -36,18 +43,16 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
             ? new Date(post.publishedAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
             : ''
 
-          // Csak az ELSŐ cikknek van képe, mint régi efdsz.hu-n, balra igazítva!
+          // Hero kép: ha van, balra igazítva! Régi Joomla!
           let imageUrl: string | null = null
-          if (i === 0) {
-            const img = post.heroImage || post.meta?.image
-            if (img && typeof img === 'object') imageUrl = img.url
-          }
+          const img = post.heroImage || post.meta?.image
+          if (img && typeof img === 'object') imageUrl = img.url
 
           return (
             <article key={i} className="py-6">
               <div className="flex gap-4">
                 {imageUrl && (
-                  <div className="flex-shrink-0 w-40 h-28 md:w-48 md:h-32 border border-[#d5cfb8] p-1 bg-white shadow-sm">
+                  <div className="flex-shrink-0 w-32 h-24 md:w-40 md:h-28 border border-[#d5cfb8] p-1 bg-white shadow-sm">
                     <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
                   </div>
                 )}
@@ -60,7 +65,7 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
                   </h3>
                   {excerpt && (
                     <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2">
-                      {excerpt.slice(0, 280)}{excerpt.length > 280 ? '...' : ''}
+                      {excerpt.slice(0, 300)}{excerpt.length > 300 ? '...' : ''}
                     </p>
                   )}
                   <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-bold hover:underline">
