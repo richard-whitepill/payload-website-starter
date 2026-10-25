@@ -1,19 +1,24 @@
 import React from 'react'
 import Image from 'next/image'
 
-// FIX: Don't use payload-types that is old, use any with all Joomla fields
 type Props = {
   media: any
-  alignment?: 'left' | 'center' | 'right' | 'full'
-  width?: '25%' | '33%' | '50%' | '75%' | '100%'
+  alignment?: 'left' | 'center' | 'right' | 'full' | string
+  width?: '25%' | '33%' | '50%' | '75%' | '100%' | string
   enableGutter?: boolean
+  enable_gutter?: boolean
   caption?: string
   alt?: string
   className?: string
+  imgClassName?: string
+  captionClassName?: string
+  disableInnerContainer?: boolean
+  [key: string]: any
 }
 
 export const MediaBlock: React.FC<Props> = (props) => {
-  const { media, alignment, width, enableGutter, caption, alt, className } = props
+  const { media, alignment, width, enableGutter, enable_gutter, caption, alt, className } = props
+  const shouldGutter = enableGutter ?? enable_gutter ?? false
 
   if (!media || typeof media === 'string') return null
 
@@ -21,70 +26,76 @@ export const MediaBlock: React.FC<Props> = (props) => {
   const mediaWidth = (media as any).width
   const mediaHeight = (media as any).height
 
-  const widthStyle: React.CSSProperties = {
-    width: width || '100%',
-    maxWidth: '100%',
+  const align = (alignment as string) || 'center'
+  const w = (width as string) || '100%'
+
+  let widthValue = w
+  if (w === '25' || w === '33' || w === '50' || w === '75' || w === '100') {
+    widthValue = `${w}%`
+  }
+  if (/^\d+$/.test(w)) {
+    widthValue = `${w}%`
   }
 
-  let containerClass = 'my-6'
+  // Joomla-style float logic
+  let figureClass = 'my-6'
   let figureStyle: React.CSSProperties = {}
 
-  if (alignment === 'left') {
-    if (enableGutter) {
-      containerClass += ' float-left mr-6 mb-4 clear-left'
-      figureStyle = { ...widthStyle, float: 'left' as const }
+  if (shouldGutter && (align === 'left' || align === 'right')) {
+    // TRUE Joomla float - text wraps!
+    if (align === 'left') {
+      figureClass = 'float-left mr-6 mb-4 mt-2'
+      figureStyle = { width: widthValue, maxWidth: '100%' }
     } else {
-      containerClass += ' mr-auto'
-      figureStyle = widthStyle
+      figureClass = 'float-right ml-6 mb-4 mt-2'
+      figureStyle = { width: widthValue, maxWidth: '100%' }
     }
-  } else if (alignment === 'right') {
-    if (enableGutter) {
-      containerClass += ' float-right ml-6 mb-4 clear-right'
-      figureStyle = { ...widthStyle, float: 'right' as const }
+  } else {
+    // No gutter - centered blocks
+    if (align === 'left') {
+      figureClass = 'mr-auto my-6'
+      figureStyle = { width: widthValue }
+    } else if (align === 'right') {
+      figureClass = 'ml-auto my-6'
+      figureStyle = { width: widthValue }
+    } else if (align === 'center') {
+      figureClass = 'mx-auto my-6'
+      figureStyle = { width: widthValue, marginLeft: 'auto', marginRight: 'auto' }
+    } else if (align === 'full') {
+      figureClass = 'w-full my-6'
+      figureStyle = { width: '100%' }
     } else {
-      containerClass += ' ml-auto'
-      figureStyle = widthStyle
+      figureStyle = { width: widthValue }
     }
-  } else if (alignment === 'center') {
-    containerClass += ' mx-auto'
-    figureStyle = { ...widthStyle, marginLeft: 'auto', marginRight: 'auto' }
-  } else if (alignment === 'full') {
-    containerClass += ' w-full'
-    figureStyle = { width: '100%' }
   }
 
   return (
-    <>
-      <figure className={`${containerClass} ${className || ''}`} style={figureStyle}>
-        <div className="overflow-hidden rounded-lg">
-          {mediaUrl && mediaWidth && mediaHeight ? (
-            <Image
-              src={mediaUrl}
-              alt={alt || (media as any).alt || ''}
-              width={mediaWidth}
-              height={mediaHeight}
-              className="h-auto w-full"
-              sizes={`(max-width: 768px) 100vw, ${width || '50vw'}`}
-            />
-          ) : (
-            <img
-              src={mediaUrl}
-              alt={alt || (media as any).alt || ''}
-              className="h-auto w-full rounded-lg"
-              style={{ maxWidth: '100%' }}
-            />
-          )}
-        </div>
-        {caption && (
-          <figcaption className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            {caption}
-          </figcaption>
+    <figure className={`${figureClass} ${className || ''}`} style={figureStyle}>
+      <div className="overflow-hidden rounded-lg">
+        {mediaUrl && mediaWidth && mediaHeight ? (
+          <Image
+            src={mediaUrl}
+            alt={alt || (media as any).alt || ''}
+            width={mediaWidth}
+            height={mediaHeight}
+            className="h-auto w-full"
+            sizes={`(max-width: 768px) 100vw, ${widthValue}`}
+          />
+        ) : (
+          <img
+            src={mediaUrl}
+            alt={alt || (media as any).alt || ''}
+            className="h-auto w-full rounded-lg"
+            style={{ maxWidth: '100%' }}
+          />
         )}
-      </figure>
-      {enableGutter && (alignment === 'left' || alignment === 'right') && (
-        <div className="clear-both" style={{ clear: 'both', height: 0 }} />
+      </div>
+      {caption && (
+        <figcaption className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          {caption}
+        </figcaption>
       )}
-    </>
+    </figure>
   )
 }
 
