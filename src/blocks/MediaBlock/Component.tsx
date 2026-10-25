@@ -1,8 +1,14 @@
 import React from 'react'
 import Image from 'next/image'
-import type { MediaBlock as MediaBlockProps } from '@/payload-types'
 
-type Props = MediaBlockProps & {
+// FIX: Don't use payload-types that is old, use any with all Joomla fields
+type Props = {
+  media: any
+  alignment?: 'left' | 'center' | 'right' | 'full'
+  width?: '25%' | '33%' | '50%' | '75%' | '100%'
+  enableGutter?: boolean
+  caption?: string
+  alt?: string
   className?: string
 }
 
@@ -15,19 +21,16 @@ export const MediaBlock: React.FC<Props> = (props) => {
   const mediaWidth = (media as any).width
   const mediaHeight = (media as any).height
 
-  // Width mapping
   const widthStyle: React.CSSProperties = {
     width: width || '100%',
     maxWidth: '100%',
   }
 
-  // Alignment + gutter (float) logic - Joomla style
   let containerClass = 'my-6'
   let figureStyle: React.CSSProperties = {}
 
   if (alignment === 'left') {
     if (enableGutter) {
-      // Float left, text wraps around - like Joomla align="left"
       containerClass += ' float-left mr-6 mb-4 clear-left'
       figureStyle = { ...widthStyle, float: 'left' as const }
     } else {
@@ -36,7 +39,6 @@ export const MediaBlock: React.FC<Props> = (props) => {
     }
   } else if (alignment === 'right') {
     if (enableGutter) {
-      // Float right, text wraps around - like Joomla align="right"
       containerClass += ' float-right ml-6 mb-4 clear-right'
       figureStyle = { ...widthStyle, float: 'right' as const }
     } else {
@@ -50,9 +52,6 @@ export const MediaBlock: React.FC<Props> = (props) => {
     containerClass += ' w-full'
     figureStyle = { width: '100%' }
   }
-
-  // Clearfix for floated images - Joomla style needs clearing after
-  const needsClearfix = enableGutter && (alignment === 'left' || alignment === 'right')
 
   return (
     <>
@@ -82,13 +81,11 @@ export const MediaBlock: React.FC<Props> = (props) => {
           </figcaption>
         )}
       </figure>
-      {needsClearfix && (
-        // Clearfix to prevent layout issues, but only if next element is not floated
+      {enableGutter && (alignment === 'left' || alignment === 'right') && (
         <div className="clear-both" style={{ clear: 'both', height: 0 }} />
       )}
     </>
   )
 }
 
-// Alternative version for Payload's RichText component - export as default block component
 export default MediaBlock
