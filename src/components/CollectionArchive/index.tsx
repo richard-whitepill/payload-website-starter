@@ -1,31 +1,85 @@
-import { cn } from '@/utilities/ui'
+
 import React from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import type { Post } from '@/payload-types'
 
-import { Card, CardPostData } from '@/components/Card'
-
-export type Props = {
-  posts: CardPostData[]
+function decodeHtml(str: string) {
+  if (!str) return ''
+  const entities: Record<string, string> = {
+    '&aacute;': 'á', '&Aacute;': 'Á',
+    '&eacute;': 'é', '&Eacute;': 'É',
+    '&iacute;': 'í', '&Iacute;': 'Í',
+    '&oacute;': 'ó', '&Oacute;': 'Ó',
+    '&uacute;': 'ú', '&Uacute;': 'Ú',
+    '&ouml;': 'ö', '&Ouml;': 'Ö',
+    '&uuml;': 'ü', '&Uuml;': 'Ü',
+    '&odblac;': 'ő', '&Odblac;': 'Ő',
+    '&udblac;': 'ű', '&Udblac;': 'Ű',
+    '&amp;': '&', '&quot;': '"', '&apos;': "'",
+    '&lt;': '<', '&gt;': '>',
+    '&nbsp;': ' ', '&rsquo;': "'", '&ldquo;': '"', '&rdquo;': '"',
+    '&ndash;': '–', '&mdash;': '—',
+    '&oacute;': 'ó', '&Oacute;': 'Ó',
+    '&agrave;': 'à', '&egrave;': 'è',
+  }
+  let result = str
+  for (const [code, char] of Object.entries(entities)) {
+    result = result.split(code).join(char)
+  }
+  // Numeric entities &#123;
+  result = result.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+  // Remove any remaining &...;
+  result = result.replace(/&[a-zA-Z]+;/g, (m) => entities[m] || m)
+  return result
 }
 
-export const CollectionArchive: React.FC<Props> = (props) => {
-  const { posts } = props
-
+export const CollectionArchive: React.FC<{ posts: Post[] }> = ({ posts }) => {
   return (
-    <div className={cn('container')}>
-      <div>
-        <div className="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-12 gap-y-4 gap-x-4 lg:gap-y-8 lg:gap-x-8 xl:gap-x-8">
-          {posts?.map((result, index) => {
-            if (typeof result === 'object' && result !== null) {
-              return (
-                <div className="col-span-4" key={index}>
-                  <Card className="h-full" doc={result} relationTo="posts" showCategories />
-                </div>
-              )
-            }
+    <div className="container">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts?.map((post, index) => {
+          const title = (post as any).title || 'Nincs cím'
+          const slug = (post as any).slug
+          const excerpt = (post as any).meta?.description || (post as any).excerpt || ''
+          const categories = (post as any).categories
+          const firstCategory = Array.isArray(categories) && categories.length > 0 
+            ? (typeof categories[0] === 'object' ? categories[0].title : categories[0]) 
+            : 'HÍREK'
+          const heroImage = (post as any).heroImage || (post as any).meta?.image
+          const imageUrl = typeof heroImage === 'object' ? heroImage?.url : null
+          const decodedExcerpt = decodeHtml(excerpt).slice(0, 200)
 
-            return null
-          })}
-        </div>
+          return (
+            <article key={index} className="border border-[#d5cfb8] rounded-lg bg-[#fffef5] p-6 shadow-sm hover:shadow-md transition-shadow">
+              {imageUrl ? (
+                <div className="mb-4 -m-6 mb-6 overflow-hidden rounded-t-lg">
+                  <Image src={imageUrl} alt={title} width={400} height={250} className="w-full h-48 object-cover" />
+                </div>
+              ) : (
+                <div className="mb-2 text-xs text-gray-400 italic"> {/* No image text removed */}
+                </div>
+              )}
+              <div className="text-xs uppercase tracking-wide text-[#5d4037] mb-2">{firstCategory}</div>
+              <h3 className="font-serif font-bold text-lg text-[#2d5016] mb-3 leading-tight">
+                <Link href={`/posts/${slug}`} className="hover:underline">
+                  {decodeHtml(title)}
+                </Link>
+              </h3>
+              {decodedExcerpt && (
+                <p className="text-sm text-[#2c2c2c] leading-relaxed line-clamp-3">
+                  {decodedExcerpt}
+                </p>
+              )}
+              <div className="mt-4">
+                <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-medium hover:underline">
+                  Bővebben...
+                </Link>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )
