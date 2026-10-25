@@ -1,99 +1,44 @@
 import React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-
 function decodeHtml(str: string) {
   if (!str) return ''
-  const entities: Record<string, string> = {
-    '&aacute;': 'á',
-    '&Aacute;': 'Á',
-    '&eacute;': 'é',
-    '&Eacute;': 'É',
-    '&iacute;': 'í',
-    '&Iacute;': 'Í',
-    '&oacute;': 'ó',
-    '&Oacute;': 'Ó',
-    '&uacute;': 'ú',
-    '&Uacute;': 'Ú',
-    '&ouml;': 'ö',
-    '&Ouml;': 'Ö',
-    '&uuml;': 'ü',
-    '&Uuml;': 'Ü',
-    '&odblac;': 'ő',
-    '&Odblac;': 'Ő',
-    '&udblac;': 'ű',
-    '&Udblac;': 'Ű',
-    '&amp;': '&',
-    '&quot;': '"',
-    '&apos;': "'",
-    '&lt;': '<',
-    '&gt;': '>',
-    '&nbsp;': ' ',
-    '&rsquo;': "'",
-    '&ldquo;': '"',
-    '&rdquo;': '"',
-    '&ndash;': '–',
-    '&mdash;': '—',
-  }
-  let result = str
-  for (const [code, char] of Object.entries(entities)) {
-    result = result.split(code).join(char)
-  }
-  // Numeric entities
-  result = result.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
-  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-  return result
+  return str.replace(/&aacute;/g,'á').replace(/&eacute;/g,'é').replace(/&iacute;/g,'í').replace(/&oacute;/g,'ó').replace(/&uacute;/g,'ú').replace(/&ouml;/g,'ö').replace(/&uuml;/g,'ü').replace(/&odblac;/g,'ő').replace(/&udblac;/g,'ű').replace(/&amp;/g,'&')
 }
-
-type Props = {
-  posts: any[]
-}
-
-export const CollectionArchive: React.FC<Props> = ({ posts }) => {
+export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
   return (
     <div className="container">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts?.map((post: any, index: number) => {
-          const title = post.title || 'Nincs cím'
+        {posts?.map((post: any, i: number) => {
+          // ERŐS KÉPKERESÉS
+          let img: any = post.heroImage || post.meta?.image || null
+          let imageUrl = null
+          let imageAlt = post.title
+          if (img) {
+            if (typeof img === 'object') {
+              imageUrl = img.url || img.sizes?.card?.url || img.sizes?.thumbnail?.url
+              imageAlt = img.alt || post.title
+            } else {
+              imageUrl = null // ID, nem objektum
+            }
+          }
+          // Ha nincs hero, próbáld az első MediaBlock-ot? Most csak hero
+          const title = post.title
           const slug = post.slug
-          const excerpt = post.meta?.description || post.excerpt || ''
-          const categories = post.categories
-          const firstCategory =
-            Array.isArray(categories) && categories.length > 0
-              ? typeof categories[0] === 'object'
-                ? categories[0].title
-                : categories[0]
-              : 'HÍREK'
-          const heroImage = post.heroImage || post.meta?.image
-          const imageUrl = typeof heroImage === 'object' ? heroImage?.url : null
-          const decodedExcerpt = decodeHtml(excerpt).slice(0, 200)
-          const decodedTitle = decodeHtml(title)
-
+          const excerpt = post.meta?.description || ''
           return (
-            <article
-              key={index}
-              className="border border-[#d5cfb8] rounded-lg bg-[#fffef5] p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              {imageUrl && (
+            <article key={i} className="border border-[#d5cfb8] rounded-lg bg-[#fffef5] p-6 shadow-sm">
+              {imageUrl ? (
                 <div className="mb-4 -m-6 mb-6 overflow-hidden rounded-t-lg">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageUrl} alt={decodedTitle} className="w-full h-48 object-cover" />
+                  <img src={imageUrl} alt={imageAlt} className="w-full h-48 object-cover" />
                 </div>
+              ) : (
+                <div className="mb-2 text-[10px] text-gray-400">Nincs hero kép: {slug} - heroImage típus: {typeof post.heroImage}</div>
               )}
-              <div className="text-xs uppercase tracking-wide text-[#5d4037] mb-2">{firstCategory}</div>
-              <h3 className="font-serif font-bold text-lg text-[#2d5016] mb-3 leading-tight">
-                <Link href={`/posts/${slug}`} className="hover:underline">
-                  {decodedTitle}
-                </Link>
+              <h3 className="font-serif font-bold text-lg text-[#2d5016] mb-3">
+                <Link href={`/posts/${slug}`}>{decodeHtml(title)}</Link>
               </h3>
-              {decodedExcerpt && (
-                <p className="text-sm text-[#2c2c2c] leading-relaxed line-clamp-3">{decodedExcerpt}</p>
-              )}
-              <div className="mt-4">
-                <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-medium hover:underline">
-                  Bővebben...
-                </Link>
-              </div>
+              <p className="text-sm">{decodeHtml(excerpt).slice(0,180)}</p>
+              <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-medium hover:underline mt-4 block">Bővebben...</Link>
             </article>
           )
         })}
