@@ -40,28 +40,27 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - több térköz, lejjebb, lágyabb szín */}
+      {/* HERO - szöveg #065517 */}
       <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-end justify-center pb-16 md:pb-20">
         <img src="/hero.jpg" alt="Erdő" className="absolute inset-0 w-full h-full object-cover" />
-        {/* Világosabb overlay hogy lágyabb szöveg is olvasható legyen */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-white/10 to-transparent" />
 
         <div className="relative z-10 container mx-auto px-4 flex justify-center">
-          <div className="flex items-center gap-12 md:gap-16 lg:gap-20">
-            {/* 3 sor - lágyabb barnás-zöldes, még kontrasztos */}
+          <div className="flex items-center gap-12 md:gap-16 lg:gap-20 bg-white/85 backdrop-blur-sm px-8 py-5 rounded-xl shadow-lg border border-white/50">
+            {/* 3 sor - #065517 */}
             <div className="text-left">
-              <h1 className="font-bold text-[#e8e0c8] text-2xl md:text-3xl lg:text-[32px] leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] tracking-wide">
+              <h1 className="font-bold text-[#065517] text-2xl md:text-3xl lg:text-[32px] leading-tight tracking-wide">
                 Erdészeti és Faipari<br />
                 Dolgozók<br />
                 Szakszervezete
               </h1>
             </div>
 
-            {/* Logo jobbra - több térköz, egy magasságban */}
+            {/* Logo jobbra */}
             <img
               src="/logo-right.png"
               alt="EFDSZ"
-              className="h-[90px] md:h-[110px] lg:h-[120px] w-auto object-contain drop-shadow-[0_3px_12px_rgba(0,0,0,0.8)] flex-shrink-0"
+              className="h-[90px] md:h-[110px] lg:h-[120px] w-auto object-contain flex-shrink-0"
             />
           </div>
         </div>
