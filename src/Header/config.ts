@@ -1,4 +1,6 @@
-import { GlobalConfig } from 'payload'
+import type { GlobalConfig } from 'payload'
+import { link } from '@/fields/link'
+import { revalidateHeader } from './hooks/revalidateHeader'
 
 export const Header: GlobalConfig = {
   slug: 'header',
@@ -7,83 +9,66 @@ export const Header: GlobalConfig = {
   },
   fields: [
     {
+      name: 'navItems',
+      type: 'array',
+      fields: [
+        link({
+          appearances: false,
+        }),
+      ],
+      maxRows: 6,
+      admin: {
+        initCollapsed: true,
+        components: {
+          RowLabel: {
+            path: '@/Header/RowLabel#RowLabel',
+          },
+        },
+      },
+    },
+    // TE ÚJ MEZŐID - BCCFA stílus
+    {
       name: 'email',
       type: 'text',
       defaultValue: 'info@efdsz.hu',
-      admin: { description: 'Felső sáv email' },
+      admin: { description: 'Felső sáv email - BCCFA stílus' },
     },
     {
       name: 'facebookUrl',
       type: 'text',
       defaultValue: 'https://www.facebook.com/efdsz.hivatalos',
-      admin: { description: 'Facebook link' },
+      admin: { description: 'Facebook oldal linkje' },
     },
     {
       name: 'logo',
-      label: 'Fő logó (bal, menü mellett)',
+      label: 'Fő logó (bal oldalon, menü mellett)',
       type: 'upload',
       relationTo: 'media',
+      admin: { description: 'Bal logó - feltölthető!' },
     },
     {
       name: 'heroImage',
-      label: 'Hero kép (menü alatt)',
+      label: 'Hero kép (menü alatt, 400px)',
       type: 'upload',
       relationTo: 'media',
+      admin: { description: 'Nagy Hero kép - erdős kép, kigördül görgetéskor!' },
     },
     {
       name: 'slogan',
       label: 'Szlogen a Hero képen',
       type: 'text',
       defaultValue: 'Erdészeti és Faipari Dolgozók Szakszervezete',
+      admin: { description: 'Adminban átírható szlogen!' },
     },
     {
       name: 'smallLogo',
       label: 'Kis logó a szlogen mellé jobbra',
       type: 'upload',
       relationTo: 'media',
-    },
-    {
-      name: 'navItems',
-      type: 'array',
-      fields: [
-        {
-          name: 'link',
-          type: 'group',
-          fields: [
-            {
-              name: 'type',
-              type: 'radio',
-              options: [
-                { label: 'Internal link', value: 'reference' },
-                { label: 'Custom URL', value: 'custom' },
-              ],
-              defaultValue: 'reference',
-              admin: { layout: 'horizontal' },
-            },
-            {
-              name: 'newTab',
-              type: 'checkbox',
-              label: 'Open in new tab',
-            },
-            {
-              name: 'reference',
-              type: 'relationship',
-              relationTo: ['pages', 'posts'],
-              required: false,
-            },
-            {
-              name: 'url',
-              type: 'text',
-              required: false,
-            },
-            {
-              name: 'label',
-              type: 'text',
-              required: true,
-            },
-          ],
-        },
-      ],
+      admin: { description: 'Kis zöld logó a szlogen mellett jobbra!' },
     },
   ],
+  hooks: {
+    afterChange: [revalidateHeader],
+  },
 }
