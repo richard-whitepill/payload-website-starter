@@ -40,31 +40,28 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - BCCFA stílus, középre zárt, 3 sor is lehet */}
-      <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-center justify-center">
-        <img
-          src="/hero.jpg"
-          alt="Erdő"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
+      {/* HERO - BCCFA középre, 3 sor + logo jobbra, egy magasságban, nincs fehér háttér */}
+      <div className="relative w-full h-[420px] md:h-[460px] overflow-hidden flex items-center justify-center">
+        <img src="/hero.jpg" alt="Erdő" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/35" />
 
-        {/* Középre zárt tartalom - mint BCCFA */}
-        <div className="relative z-10 container mx-auto px-4 flex flex-col items-center justify-center text-center">
-          {/* Fatörzs szelet logó - középen */}
-          <img
-            src="/logo-right.png"
-            alt="EFDSZ logó"
-            className="w-48 md:w-64 lg:w-72 object-contain mb-6 drop-shadow-2xl"
-          />
+        <div className="relative z-10 container mx-auto px-4 flex justify-center">
+          <div className="flex items-center gap-6 md:gap-8">
+            {/* 3 sor balra */}
+            <div className="text-left">
+              <h1 className="font-bold text-white text-2xl md:text-3xl lg:text-[32px] leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                Erdészeti és Faipari<br />
+                Dolgozók<br />
+                Szakszervezete
+              </h1>
+            </div>
 
-          {/* 3 sornyi szlogen - középre zárt, mint BCCFA */}
-          <div className="bg-white/90 backdrop-blur-sm px-8 py-6 rounded-xl shadow-2xl border border-white/50 max-w-3xl">
-            <h1 className="font-bold text-[#2d5016] text-xl md:text-2xl lg:text-3xl leading-tight">
-              Erdészeti és Faipari<br />
-              Dolgozók Szakszervezete<br />
-              <span className="text-[#5d4037] text-lg md:text-xl font-normal">1950 óta a dolgozókért</span>
-            </h1>
+            {/* Logo jobbra, egy magasságban a 3 sorral, kisebb */}
+            <img
+              src="/logo-right.png"
+              alt="EFDSZ"
+              className="h-[90px] md:h-[110px] lg:h-[120px] w-auto object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] flex-shrink-0"
+            />
           </div>
         </div>
       </div>
