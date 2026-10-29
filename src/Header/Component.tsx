@@ -13,9 +13,9 @@ export async function Header() {
   return (
     <>
       {/* TOP BAR */}
-      <div className="w-full bg-[#2d5016] text-white text-sm">
+      <div className="w-full bg-[#2d5016] text-white text-sm" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          <a href={`mailto:${email}`} className="hover:underline flex items-center gap-2 font-sans">
+          <a href={`mailto:${email}`} className="hover:underline flex items-center gap-2">
             <span>✉</span> {email}
           </a>
           <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:opacity-80">
@@ -27,11 +27,11 @@ export async function Header() {
       </div>
 
       {/* MAIN HEADER - sticky */}
-      <header className="w-full bg-[#fffef5] border-b border-[#e8e0c8] sticky top-0 z-40 shadow-sm">
+      <header className="w-full bg-[#fffef5] border-b border-[#e8e0c8] sticky top-0 z-40 shadow-sm" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 shrink-0">
             <img src="/efdsz-logo.png" alt="EFDSZ" className="h-12 w-12 object-contain" />
-            <div className="leading-tight hidden sm:block font-sans">
+            <div className="leading-tight hidden sm:block">
               <div className="font-bold text-[#2d5016] text-lg leading-none">EFDSZ</div>
               <div className="text-[10px] text-[#5d4037] uppercase">Erdészeti Szakszervezet</div>
             </div>
@@ -40,27 +40,24 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - több erdő, kevesebb farakás, 3 szín, Arial, nincs háttérkiemelés */}
-      <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-end justify-center pb-16 md:pb-20">
+      {/* HERO - BCCFA 3 szín: e3dac9, a5b061, b16420, Arial, nincs kiemelés */}
+      <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-end justify-center pb-16 md:pb-20" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         <img src="/hero-forest.jpg" alt="Erdő" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/10" />
 
         <div className="relative z-10 container mx-auto px-4 flex justify-center">
           <div className="flex items-center gap-10 md:gap-14">
-            {/* 3 sor, 3 szín, Arial, mint BCCFA */}
-            <div className="text-left font-sans">
-              <h1 className="font-bold text-2xl md:text-3xl lg:text-[34px] leading-[1.1] tracking-tight">
-                <span className="block text-[#065517] drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">Erdészeti és Faipari</span>
-                <span className="block text-[#2d5016] drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">Dolgozók</span>
-                <span className="block text-[#af5b03] drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">Szakszervezete</span>
+            <div className="text-left">
+              <h1 className="font-bold text-2xl md:text-3xl lg:text-[34px] leading-[1.1]" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                <span className="block" style={{ color: '#e3dac9' }}>Erdészeti és Faipari</span>
+                <span className="block" style={{ color: '#a5b061' }}>Dolgozók</span>
+                <span className="block" style={{ color: '#b16420' }}>Szakszervezete</span>
               </h1>
             </div>
-
-            {/* Tölgyfa levél jobbra */}
             <img
               src="/tolgyfa-level.png"
               alt="Tölgyfa levél"
-              className="h-[80px] md:h-[100px] w-auto object-contain flex-shrink-0 drop-shadow-sm"
+              className="h-[80px] md:h-[100px] w-auto object-contain flex-shrink-0"
             />
           </div>
         </div>
