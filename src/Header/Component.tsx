@@ -40,27 +40,24 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - 3 sor + jobbra tölgyfa levél, egy magasságban, lejjebb, nincs fehér háttér, nincs kifehérítés */}
+      {/* HERO - szöveg #065517, glow #af5b03 */}
       <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-end justify-center pb-16 md:pb-20">
         <img src="/hero.jpg" alt="Erdő" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/15" />
 
         <div className="relative z-10 container mx-auto px-4 flex justify-center">
           <div className="flex items-center gap-12 md:gap-16 lg:gap-20">
-            {/* 3 sor - #065517 */}
             <div className="text-left">
-              <h1 className="font-bold text-[#065517] text-2xl md:text-3xl lg:text-[32px] leading-tight tracking-wide [text-shadow:_0_0_10px_white,_0_0_20px_white,_0_1px_2px_white]">
+              <h1 className="font-bold text-[#065517] text-2xl md:text-3xl lg:text-[32px] leading-tight tracking-wide [text-shadow:_0_0_12px_#af5b03,_0_0_20px_#af5b03,_0_1px_3px_rgba(175,91,3,0.8)]">
                 Erdészeti és Faipari<br />
                 Dolgozók<br />
                 Szakszervezete
               </h1>
             </div>
-
-            {/* Tölgyfa levél jobbra */}
             <img
               src="/tolgyfa-level.png"
               alt="Tölgyfa levél"
-              className="h-[80px] md:h-[100px] lg:h-[110px] w-auto object-contain drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)] flex-shrink-0"
+              className="h-[80px] md:h-[100px] lg:h-[110px] w-auto object-contain drop-shadow-[0_2px_8px_rgba(175,91,3,0.6)] flex-shrink-0"
             />
           </div>
         </div>
