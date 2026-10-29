@@ -40,27 +40,14 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - BCCFA 3 szín: e3dac9, a5b061, b16420, Arial, nincs kiemelés */}
-      <div className="relative w-full h-[480px] md:h-[520px] overflow-hidden flex items-end justify-center pb-16 md:pb-20" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-        <img src="/hero-forest.jpg" alt="Erdő" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/10" />
-
-        <div className="relative z-10 container mx-auto px-4 flex justify-center">
-          <div className="flex items-center gap-10 md:gap-14">
-            <div className="text-left">
-              <h1 className="font-bold text-2xl md:text-3xl lg:text-[34px] leading-[1.1]" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                <span className="block" style={{ color: '#e3dac9' }}>Erdészeti és Faipari</span>
-                <span className="block" style={{ color: '#a5b061' }}>Dolgozók</span>
-                <span className="block" style={{ color: '#b16420' }}>Szakszervezete</span>
-              </h1>
-            </div>
-            <img
-              src="/tolgyfa-level.png"
-              alt="Tölgyfa levél"
-              className="h-[80px] md:h-[100px] w-auto object-contain flex-shrink-0"
-            />
-          </div>
-        </div>
+      {/* HERO - a te sablonod, BCCFA 3 szín, Arial, tölgy levél */}
+      <div className="relative w-full h-[380px] md:h-[420px] lg:h-[460px] overflow-hidden">
+        {/* Ez a te sablon képed, benne a szöveg és a levél */}
+        <img
+          src="/hero-forest-mod.jpg"
+          alt="EFDSZ - Erdészeti és Faipari Dolgozók Szakszervezete"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       </div>
     </>
   )
