@@ -1,5 +1,4 @@
 import { GlobalConfig } from 'payload'
-import { link } from '@/fields/link'
 
 export const Header: GlobalConfig = {
   slug: 'header',
@@ -11,59 +10,80 @@ export const Header: GlobalConfig = {
       name: 'email',
       type: 'text',
       defaultValue: 'info@efdsz.hu',
-      admin: { description: 'Felső sáv email cím' },
+      admin: { description: 'Felső sáv email' },
     },
     {
       name: 'facebookUrl',
       type: 'text',
       defaultValue: 'https://www.facebook.com/efdsz.hivatalos',
-      admin: { description: 'Facebook oldal linkje' },
+      admin: { description: 'Facebook link' },
     },
     {
       name: 'logo',
-      label: 'Fő logó (bal oldalon, menü mellett)',
+      label: 'Fő logó (bal, menü mellett)',
       type: 'upload',
       relationTo: 'media',
-      admin: { description: 'Bal oldali logó a menü mellett - feltölthető!' },
     },
     {
       name: 'heroImage',
       label: 'Hero kép (menü alatt)',
       type: 'upload',
       relationTo: 'media',
-      admin: { description: 'Nagy Hero kép a menü alatt - feltölthető! Görgetéskor kigördül!' },
     },
     {
       name: 'slogan',
       label: 'Szlogen a Hero képen',
       type: 'text',
       defaultValue: 'Erdészeti és Faipari Dolgozók Szakszervezete',
-      admin: { description: 'Adminban átírható szlogen a Hero képen!' },
     },
     {
       name: 'smallLogo',
-      label: 'Kis logó a szlogen mellett (jobbra)',
+      label: 'Kis logó a szlogen mellé jobbra',
       type: 'upload',
       relationTo: 'media',
-      admin: { description: 'Kis logó a szlogentől jobbra a Hero képen - feltölthető!' },
     },
     {
       name: 'navItems',
       type: 'array',
       fields: [
-        link({
-          appearances: false,
-        }),
-      ],
-      maxRows: 10,
-      admin: {
-        initCollapsed: true,
-        components: {
-          RowLabel: {
-            path: '@/Header/RowLabel#RowLabel',
-          },
+        {
+          name: 'link',
+          type: 'group',
+          fields: [
+            {
+              name: 'type',
+              type: 'radio',
+              options: [
+                { label: 'Internal link', value: 'reference' },
+                { label: 'Custom URL', value: 'custom' },
+              ],
+              defaultValue: 'reference',
+              admin: { layout: 'horizontal' },
+            },
+            {
+              name: 'newTab',
+              type: 'checkbox',
+              label: 'Open in new tab',
+            },
+            {
+              name: 'reference',
+              type: 'relationship',
+              relationTo: ['pages', 'posts'],
+              required: false,
+            },
+            {
+              name: 'url',
+              type: 'text',
+              required: false,
+            },
+            {
+              name: 'label',
+              type: 'text',
+              required: true,
+            },
+          ],
         },
-      },
+      ],
     },
   ],
 }
