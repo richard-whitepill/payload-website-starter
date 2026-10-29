@@ -1,4 +1,3 @@
-
 import React from 'react'
 import Link from 'next/link'
 import { getCachedGlobal } from '@/utilities/getGlobals'
@@ -8,14 +7,13 @@ import { HeaderNav } from './Nav'
 export async function Header() {
   const headerData: Header = await getCachedGlobal('header', 1)()
 
-  // FIX KÓDOLÁS - nem Adminból!
   const email = 'info@efdsz.hu'
   const facebookUrl = 'https://www.facebook.com/efdsz.hivatalos'
   const slogan = 'Erdészeti és Faipari Dolgozók Szakszervezete'
 
   return (
     <>
-      {/* TOP BAR - zöld, email bal, Facebook jobb - BCCFA stílus */}
+      {/* TOP BAR - zöld */}
       <div className="w-full bg-[#2d5016] text-white text-sm">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <a href={`mailto:${email}`} className="hover:underline flex items-center gap-2">
@@ -25,7 +23,7 @@ export async function Header() {
             href={facebookUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:opacity-80 flex items-center gap-1"
+            className="hover:opacity-80"
             aria-label="Facebook"
           >
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -35,20 +33,19 @@ export async function Header() {
         </div>
       </div>
 
-      {/* MAIN HEADER - fehér, logo bal, menü jobb, STICKY */}
+      {/* MAIN HEADER - fehér, STICKY, bal oldalon a te zöld logód */}
       <header className="w-full bg-[#fffef5] border-b border-[#e8e0c8] sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Link href="/" className="flex items-center">
-            {/* Ha van feltöltött logo, használd, különben szöveg */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#2d5016] rounded-full flex items-center justify-center text-white font-bold text-xl">
-                E
-              </div>
-              <div className="leading-tight">
-                <div className="font-bold text-[#2d5016] text-lg">EFDSZ</div>
-                <div className="text-[10px] text-[#5d4037] uppercase tracking-wider">
-                  Erdészeti Szakszervezet
-                </div>
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <img
+              src="/efdsz-logo.png"
+              alt="EFDSZ logó"
+              className="h-12 w-12 object-contain"
+            />
+            <div className="leading-tight hidden sm:block">
+              <div className="font-bold text-[#2d5016] text-lg leading-none">EFDSZ</div>
+              <div className="text-[10px] text-[#5d4037] uppercase tracking-wider">
+                Erdészeti Szakszervezet
               </div>
             </div>
           </Link>
@@ -56,18 +53,14 @@ export async function Header() {
         </div>
       </header>
 
-      {/* HERO - 400px, erdős kép, szlogen + kis logo jobbra, görgetéskor eltűnik */}
+      {/* HERO - 400px, a TE képeddel, kigördül */}
       <div className="relative w-full h-[400px] overflow-hidden">
-        {/* Hero kép - fix kódolt erdős kép */}
         <img
-          src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2000&auto=format&fit=crop"
-          alt="Erdő"
+          src="/hero.jpg"
+          alt="Erdő - EFDSZ"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        {/* Sötét overlay hogy olvasható legyen a szlogen */}
         <div className="absolute inset-0 bg-black/30" />
-        
-        {/* Szlogen + kis logo jobbra */}
         <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
           <div className="flex items-center gap-6 bg-white/90 backdrop-blur-sm px-8 py-6 rounded-lg shadow-lg border border-[#e8e0c8]">
             <div>
@@ -76,10 +69,12 @@ export async function Header() {
               </h1>
               <p className="text-[#5d4037] text-sm mt-1">1950 óta a dolgozókért</p>
             </div>
-            {/* Kis zöld logó jobbra a szlogen mellé */}
-            <div className="w-20 h-20 bg-[#2d5016] rounded-full flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
-              🌿
-            </div>
+            {/* Kis logó jobbra a szlogen mellé */}
+            <img
+              src="/efdsz-logo.png"
+              alt="EFDSZ"
+              className="w-20 h-20 object-contain flex-shrink-0 hidden md:block"
+            />
           </div>
         </div>
       </div>
