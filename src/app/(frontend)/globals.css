@@ -235,3 +235,8 @@ html[data-theme='light'] {
   --tw-prose-body: #2d2c2c;
   --tw-prose-headings: #2d5016;
 }
+
+/* Fekete Admin sáv elrejtése */
+.payload-admin-bar {
+  display: none !important;
+}
