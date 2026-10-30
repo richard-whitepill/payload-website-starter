@@ -10,7 +10,18 @@ export function SearchInput({ className, placeholder }: { className?: string; pl
     e.preventDefault()
     const q = value.trim()
     if (q) {
-      router.push(`/search?q=${encodeURIComponent(q)}`)
+      // Első kattintásra is fusson a keresés - hard navigation + refresh
+      const url = `/search?q=${encodeURIComponent(q)}`
+      router.push(url)
+      router.refresh()
+      // Biztosíték: ha kliens navigáció nem frissít, force reload 100ms után ha még mindig ugyanaz az oldal
+      setTimeout(() => {
+        if (window.location.pathname === '/search' && !window.location.search.includes('q=')) {
+          window.location.href = url
+        } else if (window.location.pathname !== '/search' || !window.location.search.includes(encodeURIComponent(q))) {
+          window.location.href = url
+        }
+      }, 100)
     } else {
       router.push('/search')
     }
