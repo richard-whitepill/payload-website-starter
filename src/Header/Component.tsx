@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 import type { Header as HeaderType } from '@/payload-types'
 import { HeaderNav } from './Nav'
-import { SearchInput } from './SearchInput'
 
 export async function Header() {
   const headerData: HeaderType = await getCachedGlobal('header', 1)()
@@ -12,19 +11,19 @@ export async function Header() {
 
   return (
     <>
+      {/* TOP BAR - csak email + FB */}
       <div className="w-full bg-[#2d5016] text-white text-sm" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         <div className="container mx-auto px-4 py-2 flex justify-between items-center gap-4">
           <a href={`mailto:${email}`} className="hover:underline flex items-center gap-2 shrink-0">
             <span>✉</span> {email}
           </a>
-          <div className="flex items-center gap-3">
-            <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 bg-white/10 p-1.5 rounded-full" aria-label="ERFA Híradó Facebook">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
-            </a>
-          </div>
+          <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 bg-white/10 p-1.5 rounded-full" aria-label="ERFA Híradó Facebook">
+            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+          </a>
         </div>
       </div>
 
+      {/* MAIN HEADER - fehér, EGYETLEN sima HTML kereső form - biztosan viszi ?q=-t */}
       <header className="w-full bg-[#fffef5] border-b border-[#e8e0c8] sticky top-0 z-40 shadow-sm" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
         <div className="container mx-auto px-4 py-2 flex justify-between items-center gap-4">
           <Link href="/" className="flex items-center gap-3 shrink-0">
@@ -36,7 +35,20 @@ export async function Header() {
           </Link>
           <div className="flex items-center gap-4 flex-1 justify-end">
             <HeaderNav data={headerData} />
-            <SearchInput placeholder="Keresés az oldalon..." className="w-[200px] lg:w-[260px] bg-[#e8e0c8] border border-[#d0c4a8] text-[#2d5016] placeholder-[#8a7a60] text-sm px-4 py-2 pr-10 rounded-full focus:outline-none focus:bg-[#ddd0b0] focus:border-[#b0a080] shadow-inner" />
+            {/* SIMA HTML FORM - nincs JS, biztosan /search?q=xxx */}
+            <form action="/search" method="GET" className="hidden md:block">
+              <div className="relative">
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="Keresés az oldalon..."
+                  className="w-[200px] lg:w-[260px] bg-[#e8e0c8] border border-[#d0c4a8] text-[#2d5016] placeholder-[#8a7a60] text-sm px-4 py-2 pr-10 rounded-full focus:outline-none focus:bg-[#ddd0b0] focus:border-[#b0a080] shadow-inner cursor-text"
+                />
+                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5d4037] hover:text-[#2d5016] cursor-pointer">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </header>
