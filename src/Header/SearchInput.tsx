@@ -1,23 +1,22 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 
 export function SearchInput({ className, placeholder }: { className?: string; placeholder?: string }) {
-  const searchParams = useSearchParams()
-  const initialQ = searchParams.get('q') || ''
-  const [value, setValue] = useState(initialQ)
+  const [value, setValue] = useState('')
 
-  // Ha URL-ben van q, az maradjon a mezőben (első és második kattintásnál is)
+  // URL-ből olvassa a q-t, de nem useSearchParams-szal (az prerender error-t dob)
   useEffect(() => {
-    const q = searchParams.get('q') || ''
-    setValue(q)
-  }, [searchParams])
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get('q') || ''
+      if (q) setValue(q)
+    }
+  }, [])
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const q = value.trim()
     if (q) {
-      // Hard navigation - biztosan első kattintásra is fut!
       window.location.href = `/search?q=${encodeURIComponent(q)}`
     } else {
       window.location.href = '/search'
