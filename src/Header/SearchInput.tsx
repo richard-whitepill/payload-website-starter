@@ -1,29 +1,26 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 export function SearchInput({ className, placeholder }: { className?: string; placeholder?: string }) {
-  const [value, setValue] = useState('')
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialQ = searchParams.get('q') || ''
+  const [value, setValue] = useState(initialQ)
+
+  // Ha URL-ben van q, az maradjon a mezőben (első és második kattintásnál is)
+  useEffect(() => {
+    const q = searchParams.get('q') || ''
+    setValue(q)
+  }, [searchParams])
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const q = value.trim()
     if (q) {
-      // Első kattintásra is fusson a keresés - hard navigation + refresh
-      const url = `/search?q=${encodeURIComponent(q)}`
-      router.push(url)
-      router.refresh()
-      // Biztosíték: ha kliens navigáció nem frissít, force reload 100ms után ha még mindig ugyanaz az oldal
-      setTimeout(() => {
-        if (window.location.pathname === '/search' && !window.location.search.includes('q=')) {
-          window.location.href = url
-        } else if (window.location.pathname !== '/search' || !window.location.search.includes(encodeURIComponent(q))) {
-          window.location.href = url
-        }
-      }, 100)
+      // Hard navigation - biztosan első kattintásra is fut!
+      window.location.href = `/search?q=${encodeURIComponent(q)}`
     } else {
-      router.push('/search')
+      window.location.href = '/search'
     }
   }
 
