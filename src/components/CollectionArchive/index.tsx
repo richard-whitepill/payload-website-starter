@@ -1,76 +1,118 @@
-// @ts-nocheck
 import React from 'react'
 import Link from 'next/link'
 
-function decodeHtml(str: any) {
-  if (!str || typeof str !== 'string') return str
+function decodeHtml(str: string) {
+  if (!str) return ''
   let s = str
-  // Full decode + truncated fix
-  s = s.replace(/&aacute;|&Aacute;|&aac;?|&Aac;?|&aacute;|&aac/gi, 'á')
-  s = s.replace(/&eacute;|&Eacute;|&eacu|&eacute/gi, 'é')
-  s = s.replace(/&iacute;|&Iacute;/gi, 'í')
-  s = s.replace(/&oacute;|&Oacute;/gi, 'ó')
-  s = s.replace(/&uacute;|&Uacute;/gi, 'ú')
-  s = s.replace(/&ouml;|&Ouml;/gi, 'ö')
-  s = s.replace(/&uuml;|&Uuml;/gi, 'ü')
-  s = s.replace(/&odblac;|&Odblac;|&oogon;?/gi, 'ő')
-  s = s.replace(/&udblac;|&Udblac;|&uogon;?/gi, 'ű')
-  s = s.replace(/&amp;/gi, '&')
-  s = s.replace(/&nbsp;/gi, ' ')
-  s = s.replace(/&quot;/gi, '"')
-  s = s.replace(/&#39;/gi, "'")
-  s = s.replace(/&#(\d+);/g, (_: any, c: any) => { try { return String.fromCharCode(parseInt(c, 10)) } catch { return _ } })
-  // Remove truncated fragments like k&, v&, &eacu, &eacute, & at end
-  s = s.replace(/&[a-z]+$/gi, (m: string) => {
-    const l = m.toLowerCase()
-    if (l.includes('aacute') || l.includes('aac') || l.includes('eacu')) return ''
-    if (l.includes('eacute')) return 'é'
-    if (l.includes('ouml')) return 'ö'
-    if (l.includes('uuml')) return 'ü'
-    if (l.length <= 3) return ''
-    return ''
+
+  // 1. Teljes ékezetek
+  const map: Record<string, string> = {
+    '&aacute;': 'á', '&Aacute;': 'Á', '&aac;': 'á', '&Aac;': 'Á',
+    '&eacute;': 'é', '&Eacute;': 'É',
+    '&iacute;': 'í', '&Iacute;': 'Í',
+    '&oacute;': 'ó', '&Oacute;': 'Ó',
+    '&uacute;': 'ú', '&Uacute;': 'Ú',
+    '&ouml;': 'ö', '&Ouml;': 'Ö',
+    '&uuml;': 'ü', '&Uuml;': 'Ü',
+    '&odblac;': 'ő', '&Odblac;': 'Ő',
+    '&udblac;': 'ű', '&Udblac;': 'Ű',
+    '&oogon;': 'ő', '&uogon;': 'ű',
+    '&amp;': '&', '&quot;': '"', '&lt;': '<', '&gt;': '>',
+    '&nbsp;': ' ', '&rsquo;': "'", '&ndash;': '–', '&mdash;': '—',
+  }
+  for (const [k, v] of Object.entries(map)) {
+    s = s.split(k).join(v)
+  }
+
+  // 2. Vágott entitások: &eacu, &aacu, &eacute, &aacute; ; nélkül, h&aac
+  s = s.replace(/&aacute;?|&aac;?/gi, 'á')
+  s = s.replace(/&eacute;?|&eacu;?/gi, 'é')
+  s = s.replace(/&iacute;?/gi, 'í')
+  s = s.replace(/&oacute;?/gi, 'ó')
+  s = s.replace(/&uacute;?/gi, 'ú')
+  s = s.replace(/&ouml;?/gi, 'ö')
+  s = s.replace(/&uuml;?/gi, 'ü')
+  s = s.replace(/&odblac;?|&oogon;?/gi, 'ő')
+  s = s.replace(/&udblac;?|&uogon;?/gi, 'ű')
+
+  // 3. Specifikus vágott: h&aac -> há
+  s = s.replace(/h&aac/gi, 'há')
+  s = s.replace(/&aac/gi, 'á')
+  s = s.replace(/&eacu/gi, 'é')
+
+  // 4. Numerikus
+  s = s.replace(/&#(\d+);/g, (_, n) => {
+    try { return String.fromCharCode(parseInt(n, 10)) } catch { return '' }
   })
-  s = s.replace(/\s[akv]&$/gi, '')
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, n) => {
+    try { return String.fromCharCode(parseInt(n, 16)) } catch { return '' }
+  })
+
+  // 5. Maradék &...; és vágott &... és k&, v& törlése
+  s = s.replace(/&[a-z]+;/gi, '')
+  s = s.replace(/&[a-z]{1,10}$/gi, '') // végén maradt &eacute, &eacu
+  s = s.replace(/\s[akv]&$/gi, '') // k& a végén
   s = s.replace(/\s&[a-z]*$/gi, '')
   s = s.replace(/&[a-z]*$/gi, '')
-  return s
+  s = s.replace(/\s&$/g, '')
+
+  return s.trim()
 }
 
-export const CollectionArchive: React.FC<any> = (props) => {
-  const { posts, relationTo } = props
-  const docs = posts?.docs || props?.docs || []
+export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
+  // Rendezés: legújabb elől!
+  const sorted = [...(posts || [])].sort((a: any, b: any) => {
+    const da = new Date(a.publishedAt || a.createdAt).getTime()
+    const db = new Date(b.publishedAt || b.createdAt).getTime()
+    return db - da
+  })
 
   return (
     <div className="container">
-      <div>
-        {docs?.map((doc: any, index: number) => {
-          const { slug, title, meta, publishedAt, createdAt } = doc
-          const description = meta?.description || ''
-          const date = publishedAt || createdAt
-          const dateStr = date ? new Date(date).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' }) + ' -' : ''
-          const href = `/${relationTo !== 'pages' ? `${relationTo}/` : ''}${slug}`
+      <div className="max-w-4xl mx-auto divide-y divide-[#d5cfb8]">
+        {sorted?.map((post: any, i: number) => {
+          const title = decodeHtml(post.title || '')
+          const slug = post.slug
+          const rawExcerpt = post.meta?.description || post.excerpt || ''
+          const excerpt = decodeHtml(rawExcerpt)
+          const dateStr = post.publishedAt
+            ? new Date(post.publishedAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
+            : ''
 
-          const cleanTitle = decodeHtml(title)
-          const cleanDesc = decodeHtml(description)
+          // Hero kép: ha van, balra igazítva! Régi Joomla!
+          let imageUrl: string | null = null
+          const img = post.heroImage || post.meta?.image
+          if (img && typeof img === 'object') imageUrl = img.url
 
           return (
-            <div key={index} className="py-6 border-b border-gray-300 last:border-b-0">
-              {dateStr && <div className="text-sm text-gray-600">{dateStr}</div>}
-              <h3 className="text-xl font-bold text-[#2d5a27] my-2">
-                <Link href={href}>{cleanTitle}</Link>
-              </h3>
-              {cleanDesc && <p className="text-sm text-gray-700 line-clamp-2">{cleanDesc}</p>}
-              <div className="mt-2">
-                <Link href={href} className="text-sm font-bold text-[#2d5a27] hover:underline">
-                  Bővebben...
-                </Link>
+            <article key={i} className="py-6">
+              <div className="flex gap-4">
+                {imageUrl && (
+                  <div className="flex-shrink-0 w-32 h-24 md:w-40 md:h-28 border border-[#d5cfb8] p-1 bg-white shadow-sm">
+                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  {dateStr && <div className="text-sm text-[#5d4037] mb-1">{dateStr} -</div>}
+                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight">
+                    <Link href={`/posts/${slug}`} className="hover:underline">
+                      {title}
+                    </Link>
+                  </h3>
+                  {excerpt && (
+                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2">
+                      {excerpt.slice(0, 300)}{excerpt.length > 300 ? '...' : ''}
+                    </p>
+                  )}
+                  <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-bold hover:underline">
+                    Bővebben...
+                  </Link>
+                </div>
               </div>
-            </div>
+            </article>
           )
         })}
       </div>
     </div>
   )
 }
-
-export default CollectionArchive
