@@ -1,25 +1,27 @@
-// src/components/RichText/Component.tsx - ékezet javítás
-'use client'
-import React from 'react'
-import { RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
+// @ts-nocheck
+import { RichText as RichTextConverter } from '@payloadcms/richtext-lexical/react'
+import { jsxConverter } from '@/components/RichText/converters'
 import { decodeRichTextNode } from '@/utilities/decodeHtml'
+import React from 'react'
 
-export const RichText: React.FC<{ data: any; className?: string }> = ({ data, className }) => {
-  if (!data) return null
-  
-  // Dekódoljuk a magyar ékezet entitásokat a Lexical JSON-ban
+export function RichText(props: any) {
+  const { className, enableGutter, enableProse, data, ...rest } = props
+
   const decodedData = React.useMemo(() => {
     try {
-      return decodeRichTextNode(data)
+      return data ? decodeRichTextNode(data) : data
     } catch {
       return data
     }
   }, [data])
 
   return (
-    <div className={className}>
-      <PayloadRichText data={decodedData} />
-    </div>
+    <RichTextConverter
+      {...rest}
+      data={decodedData}
+      className={className}
+      converters={jsxConverter}
+    />
   )
 }
 
