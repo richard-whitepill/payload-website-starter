@@ -33,14 +33,36 @@ function decodeHtml(str: string) {
   return s.trim()
 }
 
+function cleanExcerpt(str: string) {
+  if (!str) return ''
+  let s = str.trim()
+  // Ha a vége é, á, s, a, az, és, egy betű, töröljük!
+  s = s.replace(/\s[éáíóúöüőűa-zA-Z]{1,2}$/g, '') // árva é, s, a végén
+  s = s.replace(/\s(és|az|a|egy|é)$/gi, '') // és, az, a, egy, é a végén
+  s = s.replace(/é$/g, '') // ha é-vel végződik, töröljük az é-t
+  s = s.replace(/\s+$/g, '')
+  // Szóhatárnál vágás 280-nál, ne betű közepén!
+  if (s.length > 280) {
+    let truncated = s.slice(0, 280)
+    const lastSpace = truncated.lastIndexOf(' ')
+    if (lastSpace > 200) {
+      truncated = truncated.slice(0, lastSpace)
+    }
+    // Újra töröljük az árva betűket a vágás után!
+    truncated = truncated.replace(/\s[éáíóúöüőűa-zA-Z]{1,2}$/g, '')
+    truncated = truncated.replace(/\s(és|az|a|egy|é)$/gi, '')
+    return truncated.trim()
+  }
+  return s
+}
+
 const noHyphenStyle = {
   hyphens: 'none' as any,
   WebkitHyphens: 'none' as any,
   MozHyphens: 'none' as any,
   msHyphens: 'none' as any,
-  wordBreak: 'normal' as any,
+  wordBreak: 'keep-all' as any,
   overflowWrap: 'normal' as any,
-  WebkitBoxOrient: 'vertical' as any,
 }
 
 export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
@@ -57,7 +79,7 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
           const title = decodeHtml(post.title || '')
           const slug = post.slug
           const rawExcerpt = post.meta?.description || post.excerpt || ''
-          const excerpt = decodeHtml(rawExcerpt)
+          const excerpt = cleanExcerpt(decodeHtml(rawExcerpt))
           const dateStr = post.publishedAt
             ? new Date(post.publishedAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
             : ''
@@ -76,16 +98,14 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
                 )}
                 <div className="flex-1 min-w-0">
                   {dateStr && <div className="text-sm text-[#5d4037] mb-1" style={noHyphenStyle}>{dateStr} -</div>}
-                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight"
-                      style={noHyphenStyle}>
+                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight" style={noHyphenStyle}>
                     <Link href={`/posts/${slug}`} className="hover:underline" style={noHyphenStyle}>
                       {title}
                     </Link>
                   </h3>
                   {excerpt && (
-                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2 line-clamp-2"
-                       style={noHyphenStyle}>
-                      {excerpt}
+                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2" style={noHyphenStyle}>
+                      {excerpt}...
                     </p>
                   )}
                   <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-bold hover:underline" style={noHyphenStyle}>
