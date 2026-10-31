@@ -1,72 +1,75 @@
 // @ts-nocheck
-import { RichText as RichTextConverter } from '@payloadcms/richtext-lexical/react'
+import React from 'react'
+import { DefaultNodeTypes, SerializedBlockNode } from '@payloadcms/richtext-lexical'
+import { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import { JSXConvertersFunction, RichText as RichTextLexical } from '@payloadcms/richtext-lexical/react'
 
-function decode(str: string) {
+import { BannerBlock } from '@/blocks/Banner/Component'
+import { CallToActionBlock } from '@/blocks/CallToAction/Component'
+import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
+import { MediaBlock } from '@/blocks/MediaBlock/Component'
+
+function decode(str: any) {
   if (!str || typeof str !== 'string') return str
+  let s = str
   const map: any = {
-    '&aacute;': 'á', '&Aacute;': 'Á', '&aac;': 'á', '&Aac;': 'Á', '&aacute': 'á',
+    '&aacute;': 'á', '&Aacute;': 'Á', '&aac;': 'á', '&Aac;': 'Á', '&aacute': 'á', '&aac': 'á',
     '&eacute;': 'é', '&Eacute;': 'É', '&eacute': 'é',
     '&iacute;': 'í', '&Iacute;': 'Í',
     '&oacute;': 'ó', '&Oacute;': 'Ó',
     '&uacute;': 'ú', '&Uacute;': 'Ú',
     '&ouml;': 'ö', '&Ouml;': 'Ö', '&ouml': 'ö',
     '&uuml;': 'ü', '&Uuml;': 'Ü', '&uuml': 'ü',
-    '&odblac;': 'ő', '&Odblac;': 'Ő', '&odblac': 'ő',
-    '&udblac;': 'ű', '&Udblac;': 'Ű', '&udblac': 'ű',
+    '&odblac;': 'ő', '&Odblac;': 'Ő', '&odblac': 'ő', '&Odblac': 'Ő',
+    '&udblac;': 'ű', '&Udblac;': 'Ű', '&udblac': 'ű', '&Udblac': 'Ű',
     '&oogon;': 'ő', '&uogon;': 'ű',
     '&amp;': '&', '&nbsp;': ' ', '&quot;': '"', '&lt;': '<', '&gt;': '>',
-    '&#39;': "'", '&#34;': '"', '&#38;': '&',
-    '&ndash;': '–', '&mdash;': '—',
+    '&#39;': "'", '&#34;': '"',
   }
-  let s = str
-  for (const k in map) {
-    s = s.split(k).join(map[k])
-  }
-  // h&aac -> há  (truncated)
-  s = s.replace(/&aacute;|&aac;?/g, 'á')
-  s = s.replace(/&eacute;?/g, 'é')
-  s = s.replace(/&ouml;?/g, 'ö')
-  s = s.replace(/&uuml;?/g, 'ü')
-  s = s.replace(/&odblac;?|&oogon;?/g, 'ő')
-  s = s.replace(/&udblac;?|&uogon;?/g, 'ű')
+  for (const k in map) s = s.split(k).join(map[k])
   s = s.replace(/&#(\d+);/g, (_: any, c: any) => String.fromCharCode(parseInt(c, 10)))
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_: any, c: any) => String.fromCharCode(parseInt(c, 16)))
   return s
 }
 
-export function RichText(props: any) {
-  const converters = {
-    // Fix ékezet in text nodes
-    text: ({ node, nodesToJSX }: any) => {
-      const text = decode(node?.text || '')
-      // Keep formatting (bold, italic etc) via default handling
-      const formatted = nodesToJSX ? nodesToJSX({ nodes: [{ ...node, text }] }) : text
-      return formatted
-    },
-    // Fix képek - normál méret
-    upload: ({ node }: any) => {
-      const v = node?.value || node?.fields || {}
-      const url = v?.url || v?.sizes?.medium?.url || v?.sizes?.large?.url
-      if (!url) return null
-      // eslint-disable-next-line @next/next/no-img-element
-      return <img src={url} alt={v?.alt || ''} style={{ maxWidth: '100%', height: 'auto', margin: '1rem 0', borderRadius: '8px' }} />
-    },
-    blocks: {
-      mediaBlock: ({ node }: any) => {
-        const media = node?.fields?.media || node?.fields
-        const url = media?.url || media?.sizes?.medium?.url
-        if (!url) return null
-        // eslint-disable-next-line @next/next/no-img-element
-        return <img src={url} alt={media?.alt || ''} style={{ maxWidth: '100%', height: 'auto', margin: '1rem 0', borderRadius: '8px' }} />
-      }
-    }
-  } as any
+type NodeTypes = DefaultNodeTypes | SerializedBlockNode<CodeBlockProps | any>
 
+const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
+  ...defaultConverters,
+  // Ékezet fix - minden text node-ban
+  text: ({ node }: any) => {
+    if (node?.text) {
+      const original = node.text
+      node.text = decode(node.text)
+      // Debug: if you still see &aacute;, log it
+    }
+    return (defaultConverters as any).text ? (defaultConverters as any).text({ node }) : node.text
+  },
+  blocks: {
+    banner: ({ node }: any) => <BannerBlock className="col-start-2 mb-4" {...node.fields} />,
+    mediaBlock: ({ node }: any) => {
+      return <MediaBlock className="col-start-1 col-span-3" {...node.fields} />
+    },
+    code: ({ node }: any) => <CodeBlock className="col-start-2" {...node.fields} />,
+    cta: ({ node }: any) => <CallToActionBlock {...node.fields} />,
+  },
+})
+
+type Props = {
+  data: SerializedEditorState
+  enableGutter?: boolean
+  enableProse?: boolean
+} & React.HTMLAttributes<HTMLDivElement>
+
+export default function RichText(props: Props) {
+  const { className, enableProse = true, enableGutter = true, ...rest } = props
   return (
-    <RichTextConverter
-      {...props}
-      converters={converters}
+    <RichTextLexical
+      converters={jsxConverters}
+      className={className}
+      {...rest}
     />
   )
 }
 
-export default RichText
+export { RichText }
