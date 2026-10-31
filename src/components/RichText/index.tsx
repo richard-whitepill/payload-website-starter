@@ -9,9 +9,11 @@ import { CallToActionBlock } from '@/blocks/CallToAction/Component'
 import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
 
-function decode(str: any) {
+function decodeHtml(str: any) {
   if (!str || typeof str !== 'string') return str
   let s = str
+
+  // 1. Ismert magyar ékezetek - minden variáció
   const map: any = {
     '&aacute;': 'á', '&Aacute;': 'Á', '&aac;': 'á', '&Aac;': 'Á', '&aacute': 'á', '&aac': 'á',
     '&eacute;': 'é', '&Eacute;': 'É', '&eacute': 'é',
@@ -22,13 +24,44 @@ function decode(str: any) {
     '&uuml;': 'ü', '&Uuml;': 'Ü', '&uuml': 'ü',
     '&odblac;': 'ő', '&Odblac;': 'Ő', '&odblac': 'ő', '&Odblac': 'Ő',
     '&udblac;': 'ű', '&Udblac;': 'Ű', '&udblac': 'ű', '&Udblac': 'Ű',
-    '&oogon;': 'ő', '&uogon;': 'ű',
-    '&amp;': '&', '&nbsp;': ' ', '&quot;': '"', '&lt;': '<', '&gt;': '>',
-    '&#39;': "'", '&#34;': '"',
+    '&oogon;': 'ő', '&Oogon;': 'Ő', '&uogon;': 'ű', '&Uogon;': 'Ű',
+    '&ouml;': 'ö', '&Ouml;': 'Ö', '&uuml;': 'ü', '&Uuml;': 'Ü',
+    '&szlig;': 'ß',
+    '&amp;': '&', '&nbsp;': ' ', '&quot;': '"', '&apos;': "'", '&lt;': '<', '&gt;': '>',
+    '&#39;': "'", '&#34;': '"', '&#38;': '&', '&#60;': '<', '&#62;': '>',
   }
-  for (const k in map) s = s.split(k).join(map[k])
-  s = s.replace(/&#(\d+);/g, (_: any, c: any) => String.fromCharCode(parseInt(c, 10)))
-  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_: any, c: any) => String.fromCharCode(parseInt(c, 16)))
+  for (const k in map) {
+    s = s.split(k).join(map[k])
+  }
+
+  // 2. Truncated formák: h&aac -> há, &aacute -> á stb.
+  s = s.replace(/&aacute;?/gi, (m: string) => (m.toLowerCase().startsWith('&a') ? 'á' : m))
+  s = s.replace(/&eacute;?/gi, 'é')
+  s = s.replace(/&ouml;?/gi, 'ö')
+  s = s.replace(/&uuml;?/gi, 'ü')
+  s = s.replace(/&odblac;?|&oogon;?/gi, 'ő')
+  s = s.replace(/&udblac;?|&uogon;?/gi, 'ű')
+  // Fix h&aac pattern specifically
+  s = s.replace(/h&aac/gi, 'há')
+  s = s.replace(/&aac;?/gi, 'á')
+
+  // 3. Numerikus entitások
+  s = s.replace(/&#(\d+);/g, (_: any, c: any) => {
+    try { return String.fromCharCode(parseInt(c, 10)) } catch { return _ }
+  })
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_: any, c: any) => {
+    try { return String.fromCharCode(parseInt(c, 16)) } catch { return _ }
+  })
+
+  // 4. Böngészőben textarea trükk - minden maradék entitást dekódol
+  if (typeof document !== 'undefined') {
+    try {
+      const txt = document.createElement('textarea')
+      txt.innerHTML = s
+      return txt.value
+    } catch {}
+  }
+
   return s
 }
 
@@ -36,12 +69,10 @@ type NodeTypes = DefaultNodeTypes | SerializedBlockNode<CodeBlockProps | any>
 
 const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
   ...defaultConverters,
-  // Ékezet fix - minden text node-ban
+  // Minden text node-ban ékezet fix
   text: ({ node }: any) => {
-    if (node?.text) {
-      const original = node.text
-      node.text = decode(node.text)
-      // Debug: if you still see &aacute;, log it
+    if (node?.text && typeof node.text === 'string') {
+      node.text = decodeHtml(node.text)
     }
     return (defaultConverters as any).text ? (defaultConverters as any).text({ node }) : node.text
   },
