@@ -1,41 +1,26 @@
+// src/components/RichText/Component.tsx - ékezet javítás
+'use client'
 import React from 'react'
-import { DefaultNodeTypes, SerializedBlockNode } from '@payloadcms/richtext-lexical'
-import { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
-import { JSXConvertersFunction, RichText as RichTextLexical } from '@payloadcms/richtext-lexical/react'
+import { RichText as PayloadRichText } from '@payloadcms/richtext-lexical/react'
+import { decodeRichTextNode } from '@/utilities/decodeHtml'
 
-import { BannerBlock } from '@/blocks/Banner/Component'
-import { CallToActionBlock } from '@/blocks/CallToAction/Component'
-import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
-import { MediaBlock } from '@/blocks/MediaBlock/Component'
+export const RichText: React.FC<{ data: any; className?: string }> = ({ data, className }) => {
+  if (!data) return null
+  
+  // Dekódoljuk a magyar ékezet entitásokat a Lexical JSON-ban
+  const decodedData = React.useMemo(() => {
+    try {
+      return decodeRichTextNode(data)
+    } catch {
+      return data
+    }
+  }, [data])
 
-type NodeTypes = DefaultNodeTypes | SerializedBlockNode<CodeBlockProps | any>
-
-const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
-  ...defaultConverters,
-  blocks: {
-    banner: ({ node }: any) => <BannerBlock className="col-start-2 mb-4" {...node.fields} />,
-    mediaBlock: ({ node }: any) => {
-      // FIX: Only pass fields that MediaBlock actually has, no extra props like captionClassName
-      return <MediaBlock className="col-start-1 col-span-3" {...node.fields} />
-    },
-    code: ({ node }: any) => <CodeBlock className="col-start-2" {...node.fields} />,
-    cta: ({ node }: any) => <CallToActionBlock {...node.fields} />,
-  },
-})
-
-type Props = {
-  data: SerializedEditorState
-  enableGutter?: boolean
-  enableProse?: boolean
-} & React.HTMLAttributes<HTMLDivElement>
-
-export default function RichText(props: Props) {
-  const { className, enableProse = true, enableGutter = true, ...rest } = props
   return (
-    <RichTextLexical
-      converters={jsxConverters}
-      className={className}
-      {...rest}
-    />
+    <div className={className}>
+      <PayloadRichText data={decodedData} />
+    </div>
   )
 }
+
+export default RichText
