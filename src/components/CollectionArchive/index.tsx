@@ -4,8 +4,6 @@ import Link from 'next/link'
 function decodeHtml(str: string) {
   if (!str) return ''
   let s = str
-
-  // 1. Teljes ékezetek
   const map: Record<string, string> = {
     '&aacute;': 'á', '&Aacute;': 'Á', '&aac;': 'á', '&Aac;': 'Á',
     '&eacute;': 'é', '&Eacute;': 'É',
@@ -18,49 +16,24 @@ function decodeHtml(str: string) {
     '&udblac;': 'ű', '&Udblac;': 'Ű',
     '&oogon;': 'ő', '&uogon;': 'ű',
     '&amp;': '&', '&quot;': '"', '&lt;': '<', '&gt;': '>',
-    '&nbsp;': ' ', '&rsquo;': "'", '&ndash;': '–', '&mdash;': '—',
+    '&nbsp;': ' ', '&rsquo;': "'", '&ndash;': '–',
   }
-  for (const [k, v] of Object.entries(map)) {
-    s = s.split(k).join(v)
-  }
-
-  // 2. Vágott entitások: &eacu, &aacu, &eacute, &aacute; ; nélkül, h&aac
+  for (const [k, v] of Object.entries(map)) s = s.split(k).join(v)
   s = s.replace(/&aacute;?|&aac;?/gi, 'á')
   s = s.replace(/&eacute;?|&eacu;?/gi, 'é')
-  s = s.replace(/&iacute;?/gi, 'í')
-  s = s.replace(/&oacute;?/gi, 'ó')
-  s = s.replace(/&uacute;?/gi, 'ú')
   s = s.replace(/&ouml;?/gi, 'ö')
   s = s.replace(/&uuml;?/gi, 'ü')
   s = s.replace(/&odblac;?|&oogon;?/gi, 'ő')
   s = s.replace(/&udblac;?|&uogon;?/gi, 'ű')
-
-  // 3. Specifikus vágott: h&aac -> há
-  s = s.replace(/h&aac/gi, 'há')
-  s = s.replace(/&aac/gi, 'á')
-  s = s.replace(/&eacu/gi, 'é')
-
-  // 4. Numerikus
-  s = s.replace(/&#(\d+);/g, (_, n) => {
-    try { return String.fromCharCode(parseInt(n, 10)) } catch { return '' }
-  })
-  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, n) => {
-    try { return String.fromCharCode(parseInt(n, 16)) } catch { return '' }
-  })
-
-  // 5. Maradék &...; és vágott &... és k&, v& törlése
+  s = s.replace(/&#(\d+);/g, (_, n) => { try { return String.fromCharCode(parseInt(n, 10)) } catch { return '' } })
   s = s.replace(/&[a-z]+;/gi, '')
-  s = s.replace(/&[a-z]{1,10}$/gi, '') // végén maradt &eacute, &eacu
-  s = s.replace(/\s[akv]&$/gi, '') // k& a végén
-  s = s.replace(/\s&[a-z]*$/gi, '')
+  s = s.replace(/&[a-z]{1,10}$/gi, '')
+  s = s.replace(/\s[akv]&$/gi, '')
   s = s.replace(/&[a-z]*$/gi, '')
-  s = s.replace(/\s&$/g, '')
-
   return s.trim()
 }
 
 export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
-  // Rendezés: legújabb elől!
   const sorted = [...(posts || [])].sort((a: any, b: any) => {
     const da = new Date(a.publishedAt || a.createdAt).getTime()
     const db = new Date(b.publishedAt || b.createdAt).getTime()
@@ -79,7 +52,6 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
             ? new Date(post.publishedAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
             : ''
 
-          // Hero kép: ha van, balra igazítva! Régi Joomla!
           let imageUrl: string | null = null
           const img = post.heroImage || post.meta?.image
           if (img && typeof img === 'object') imageUrl = img.url
@@ -92,15 +64,16 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
                     <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
                   </div>
                 )}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {dateStr && <div className="text-sm text-[#5d4037] mb-1">{dateStr} -</div>}
-                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight">
+                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight hyphens-none">
                     <Link href={`/posts/${slug}`} className="hover:underline">
                       {title}
                     </Link>
                   </h3>
                   {excerpt && (
-                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2">
+                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2 hyphens-none break-normal overflow-hidden"
+                       style={{ hyphens: 'none', WebkitHyphens: 'none', wordBreak: 'keep-all', overflowWrap: 'normal' }}>
                       {excerpt.slice(0, 300)}{excerpt.length > 300 ? '...' : ''}
                     </p>
                   )}
