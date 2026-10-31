@@ -33,6 +33,20 @@ function decodeHtml(str: string) {
   return s.trim()
 }
 
+function truncateAtWord(str: string, maxLen: number) {
+  if (!str || str.length <= maxLen) return str
+  // Vágás 300-nál, de szóhatárnál!
+  let truncated = str.slice(0, maxLen)
+  // Keresd az utolsó szóközt
+  const lastSpace = truncated.lastIndexOf(' ')
+  if (lastSpace > maxLen * 0.7) { // ha van szóköz az utolsó 30%-ban, ott vágj!
+    truncated = truncated.slice(0, lastSpace)
+  }
+  // Ne maradjon árva é, s, a, az, és stb. a végén!
+  truncated = truncated.replace(/\s[éáíóúöüőűa-zA-Z]{1,2}$/g, '') // é, s, és, a, az törlése a végén ha árva
+  return truncated.trim()
+}
+
 export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
   const sorted = [...(posts || [])].sort((a: any, b: any) => {
     const da = new Date(a.publishedAt || a.createdAt).getTime()
@@ -47,7 +61,8 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
           const title = decodeHtml(post.title || '')
           const slug = post.slug
           const rawExcerpt = post.meta?.description || post.excerpt || ''
-          const excerpt = decodeHtml(rawExcerpt)
+          const excerptRaw = decodeHtml(rawExcerpt)
+          const excerpt = truncateAtWord(excerptRaw, 300)
           const dateStr = post.publishedAt
             ? new Date(post.publishedAt).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })
             : ''
@@ -66,15 +81,15 @@ export const CollectionArchive: React.FC<{ posts: any[] }> = ({ posts }) => {
                 )}
                 <div className="flex-1 min-w-0">
                   {dateStr && <div className="text-sm text-[#5d4037] mb-1">{dateStr} -</div>}
-                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight hyphens-none">
+                  <h3 className="font-serif font-bold text-lg md:text-xl text-[#2d5016] mb-2 leading-tight">
                     <Link href={`/posts/${slug}`} className="hover:underline">
                       {title}
                     </Link>
                   </h3>
                   {excerpt && (
-                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2 hyphens-none break-normal overflow-hidden"
-                       style={{ hyphens: 'none', WebkitHyphens: 'none', wordBreak: 'keep-all', overflowWrap: 'normal' }}>
-                      {excerpt.slice(0, 300)}{excerpt.length > 300 ? '...' : ''}
+                    <p className="text-[14px] text-[#2c2c2c] leading-relaxed mb-2"
+                       style={{ hyphens: 'none', WebkitHyphens: 'none', wordBreak: 'keep-all' }}>
+                      {excerpt}{excerptRaw.length > 300 ? '...' : ''}
                     </p>
                   )}
                   <Link href={`/posts/${slug}`} className="text-sm text-[#2d5016] font-bold hover:underline">
